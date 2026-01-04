@@ -7,6 +7,21 @@ This Chrome extension helps you manage browser tabs with features like search, f
 **Created by:** Steve Souza using Claude Code (01/26)
 **Status:** Experimental learning project
 
+## Table of Contents
+
+- [Features](#features)
+- [UI Preview](#ui-preview)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Permissions](#permissions)
+- [File Structure](#file-structure)
+- [Technical Details](#technical-details)
+- [Known Limitations](#known-limitations)
+- [Development](#development)
+- [Changelog](#changelog)
+- [License](#license)
+- [Support](#support)
+
 ## Features
 
 ### 🔍 Search & Filter
