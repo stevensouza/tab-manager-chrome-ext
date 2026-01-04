@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Tab Manager",
-  "version": "1.0",
-  "description": "Search/filter tabs, close tabs/groups, view favicons, detect duplicates, highlight active tab. Created by Steve Souza using Claude Code (experimental)",
+  "version": "2.0",
+  "description": "Manage tabs with search, filters, sorting, pin/mute controls, duplicate detection, and age-based color coding. Created by Steve Souza using Claude Code (experimental)",
   "permissions": [
     "tabs",
     "tabGroups"

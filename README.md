@@ -1,6 +1,6 @@
 # Tab Manager Chrome Extension
 
-This Chrome extension helps you manage browser tabs with features like search, filtering, group organization, and duplicate detection. This project was built from scratch in **less than one hour** using Claude Code—despite having no prior experience with Chrome extension development and no defined requirements at the start. By iterating on ideas in real-time and letting the development process evolve organically, Claude Code helped transform initial concepts into a functional extension. This demonstrates what AI-assisted development can enable: going from zero knowledge to a working product in under 60 minutes.
+This Chrome extension helps you manage browser tabs with features like search, filtering, sorting, group organization, duplicate detection, pin/mute controls, and age-based visual indicators. **Version 1.0 was built from scratch in less than one hour** using Claude Code—despite having no prior experience with Chrome extension development and no defined requirements at the start. By iterating on ideas in real-time and letting the development process evolve organically, Claude Code helped transform initial concepts into a functional extension. This demonstrates what AI-assisted development can enable: going from zero knowledge to a working product in under 60 minutes.
 
 **Important Context:** I created this extension as a learning experiment with no prior Chrome extension development experience. It has worked well for my personal use, but I can't speak to the code quality or whether it follows Chrome extension best practices. The good news: the extension **only accesses tab metadata** (titles, URLs, and group names) and **does not read or modify any website content or other browser data**—it cannot change anything you've typed, stored, or browsed. See the [Permissions](#permissions) section below for technical details. Use at your own discretion, and feel free to use as-is or modify it however you like.
 
@@ -29,12 +29,23 @@ This Chrome extension helps you manage browser tabs with features like search, f
 - **Group name search** - Search by tab group names
 - **Show Only Duplicates** - Toggle to view only duplicate tabs
 - **Group filtering** - Click group headers to filter by specific groups
+- **Clear Filters** - One-click button to reset all filters and sorting
 
 ### 📊 Tab Management
 - **Tab count badge** - Shows total tab count in extension icon
 - **Group organization** - Visual display of Chrome's native tab groups with matching colors
 - **Tab counts** - Shows number of tabs in each group
 - **Active tab indicator** - Highlights currently active tab with blue border
+- **Pin/Unpin tabs** - Click 📌/📍 button to toggle pin state without switching tabs
+- **Mute/Unmute tabs** - Click 🔇/🔊/🔈 button to toggle audio without switching tabs
+
+### 🔄 Sorting
+- **7 sort options** - Title (A→Z, Z→A), URL (A→Z, Z→A), Age (Newest/Oldest), Default (by group)
+- **Per-group sorting** - Sort tabs within each group (default)
+- **Global sorting** - Optional checkbox to sort all tabs together across groups
+  - Shows group badges when globally sorted
+  - Persists sort preference across sessions
+- **Persistent preferences** - Remembers your sort choice and global sort setting
 
 ### ❌ Close Operations
 - **Individual tab close** - Hover over any tab to see close button
@@ -51,7 +62,13 @@ This Chrome extension helps you manage browser tabs with features like search, f
 ### 🎨 Visual Features
 - **Favicons** - Website icons displayed next to tab names
 - **Color-coded groups** - Matches Chrome's tab group colors (blue, red, yellow, green, pink, purple, cyan, orange, grey)
+- **Age-based color coding** - Tab borders indicate last access time:
+  - 🟢 Green: ≤ 2 hours (recently accessed)
+  - 🟡 Yellow: ≤ 24 hours (accessed hours ago)
+  - 🟠 Orange: ≤ 1 week (days old)
+  - 🔴 Red: > 1 week (very old tabs)
 - **Hover effects** - Clean UI with smooth transitions
+- **Interactive badges** - Pin, mute, and close buttons with tactile feedback (scale animations)
 
 ## UI Preview
 
@@ -284,8 +301,19 @@ chrome_ext/
 
 ## Changelog
 
+**Version 2.0 (2025-01-26)**
+- ✨ **NEW:** Interactive pin/unpin toggle buttons (📌/📍)
+- ✨ **NEW:** Interactive mute/unmute toggle buttons (🔇/🔊/🔈)
+- ✨ **NEW:** 7 sort options (Title, URL, Age, Default)
+- ✨ **NEW:** Global sorting mode with group badges
+- ✨ **NEW:** Clear Filters button (one-click reset)
+- ✨ **NEW:** localStorage persistence for sort preferences
+- ✨ **NEW:** Age-based color coding (🟢🟡🟠🔴 borders)
+- 🎨 Improved UI with hover animations and tactile feedback
+- 🐛 Fixed tab click handlers to exclude action buttons
+
 **Version 1.0 (2025-01-26)**
-- Initial release
+- Initial release (built in <1 hour!)
 - Search and filter functionality
 - Tab groups with color coding
 - Duplicate detection and management

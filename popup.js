@@ -37,6 +37,14 @@ let currentSearchTerm = '';
 // Whether "Show Only Duplicates" toggle is active
 let duplicateFilterActive = false;
 
+// Current sort option (persisted in localStorage)
+// Options: 'default', 'title-asc', 'title-desc', 'url-asc', 'url-desc', 'age-newest', 'age-oldest'
+let currentSortOption = 'default';
+
+// Whether to sort globally (across all groups) or within each group
+// Only applies when currentSortOption is not 'default'
+let globalSortEnabled = false;
+
 /*
  * ============================================================================
  * TAB ORGANIZATION
@@ -101,6 +109,59 @@ function buildDuplicateMap(tabs) {
     counts[tab.url] = (counts[tab.url] || 0) + 1;
   });
   return counts;
+}
+
+/**
+ * Sorts an array of tabs based on the current sort option.
+ *
+ * Sort options:
+ * - default: No sorting (maintains group organization)
+ * - title-asc/desc: Alphabetical by tab title
+ * - url-asc/desc: Alphabetical by URL
+ * - age-newest/oldest: By last accessed time
+ *
+ * @param {Array} tabs - Array of tabs to sort
+ * @returns {Array} Sorted array of tabs
+ */
+function sortTabs(tabs) {
+  if (currentSortOption === 'default') {
+    return tabs; // No sorting - keep original order
+  }
+
+  const sorted = [...tabs]; // Create copy to avoid mutating original
+
+  switch (currentSortOption) {
+    case 'title-asc':
+      return sorted.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+
+    case 'title-desc':
+      return sorted.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
+
+    case 'url-asc':
+      return sorted.sort((a, b) => (a.url || '').localeCompare(b.url || ''));
+
+    case 'url-desc':
+      return sorted.sort((a, b) => (b.url || '').localeCompare(a.url || ''));
+
+    case 'age-newest':
+      // Newest first (highest lastAccessed timestamp)
+      return sorted.sort((a, b) => {
+        const timeA = a.lastAccessed || 0;
+        const timeB = b.lastAccessed || 0;
+        return timeB - timeA; // Descending
+      });
+
+    case 'age-oldest':
+      // Oldest first (lowest lastAccessed timestamp)
+      return sorted.sort((a, b) => {
+        const timeA = a.lastAccessed || 0;
+        const timeB = b.lastAccessed || 0;
+        return timeA - timeB; // Ascending
+      });
+
+    default:
+      return tabs;
+  }
 }
 
 /**
@@ -307,6 +368,10 @@ async function toggleMuteTab(tabId, currentMutedState, event) {
  * - Group filter: Tab belongs to specific group
  * All active filters must match for a tab to be visible.
  *
+ * SORT MODES:
+ * - Per-group sorting: Tabs sorted within each group (default)
+ * - Global sorting: All tabs sorted together with group badges
+ *
  * AUTO-DISABLE DUPLICATE FILTER:
  * If "Show Only Duplicates" is active but no duplicates remain,
  * the filter is automatically disabled to avoid confusion.
@@ -353,9 +418,54 @@ function renderTabs(searchTerm = '') {
     }
   }
 
-  // Render grouped tabs
+  // GLOBAL SORT MODE: Flatten all tabs and sort globally
+  if (globalSortEnabled && currentSortOption !== 'default') {
+    // Collect all tabs (grouped and ungrouped) that match filters
+    let allFilteredTabs = [];
+
+    // Add grouped tabs with group metadata
+    organized.groups.forEach(group => {
+      const filteredTabs = group.tabs.filter(matchesAllFilters);
+      filteredTabs.forEach(tab => {
+        allFilteredTabs.push({
+          tab: tab,
+          groupId: group.id,
+          groupTitle: group.title,
+          groupColor: group.color
+        });
+      });
+    });
+
+    // Add ungrouped tabs
+    const filteredUngrouped = organized.ungrouped.filter(matchesAllFilters);
+    filteredUngrouped.forEach(tab => {
+      allFilteredTabs.push({
+        tab: tab,
+        groupId: -1,
+        groupTitle: null,
+        groupColor: null
+      });
+    });
+
+    // Sort globally
+    allFilteredTabs = sortTabs(allFilteredTabs.map(item => item.tab))
+      .map(tab => {
+        // Find the group metadata for this tab
+        return allFilteredTabs.find(item => item.tab.id === tab.id);
+      });
+
+    // Render as single flat list with group badges
+    allFilteredTabs.forEach(item => {
+      const tabElement = createTabElement(item.tab, item.groupColor, item.groupTitle);
+      tabList.appendChild(tabElement);
+    });
+
+    return; // Exit early - don't use grouped rendering
+  }
+
+  // PER-GROUP SORT MODE: Render grouped tabs (default behavior)
   organized.groups.forEach(group => {
-    const filteredTabs = group.tabs.filter(matchesAllFilters);
+    const filteredTabs = sortTabs(group.tabs.filter(matchesAllFilters));
     const groupName = group.title || `${group.color} group`;
     const groupNameMatches = searchTerm && groupName.toLowerCase().includes(lowerSearch);
 
@@ -423,7 +533,7 @@ function renderTabs(searchTerm = '') {
   });
 
   // Render ungrouped tabs (only if not filtering by a specific group)
-  const filteredUngrouped = organized.ungrouped.filter(matchesAllFilters);
+  const filteredUngrouped = sortTabs(organized.ungrouped.filter(matchesAllFilters));
   if (filteredUngrouped.length > 0 && activeGroupFilter === null) {
     const ungroupedContainer = document.createElement('div');
     ungroupedContainer.className = 'ungrouped-container';
@@ -456,6 +566,7 @@ function renderTabs(searchTerm = '') {
  *
  * Tab element contains:
  * - Favicon (website icon)
+ * - Group badge (when globally sorted - shows group name/color)
  * - Title (truncated if too long)
  * - Duplicate badge (if URL appears multiple times)
  * - Close button (visible on hover)
@@ -463,9 +574,11 @@ function renderTabs(searchTerm = '') {
  * Active tab gets special styling (blue border + background).
  *
  * @param {Object} tab - Chrome tab object with id, title, url, favIconUrl, etc.
+ * @param {string} groupColor - Optional group color (for global sort mode)
+ * @param {string} groupTitle - Optional group title (for global sort mode)
  * @returns {HTMLElement} Tab element to insert into DOM
  */
-function createTabElement(tab) {
+function createTabElement(tab, groupColor = null, groupTitle = null) {
   const tabItem = document.createElement('div');
   tabItem.className = 'tab-item';
 
@@ -491,6 +604,24 @@ function createTabElement(tab) {
     favicon.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><text y="12" font-size="12">📄</text></svg>';
   };
   tabItem.appendChild(favicon);
+
+  // Group badge - Shows group when globally sorted
+  if (groupColor !== null) {
+    const groupBadge = document.createElement('span');
+    groupBadge.className = 'group-badge';
+
+    if (tab.groupId === -1) {
+      // Ungrouped tab
+      groupBadge.classList.add('ungrouped');
+      groupBadge.textContent = 'No Group';
+    } else {
+      // Tab in a group
+      groupBadge.dataset.groupColor = groupColor;
+      groupBadge.textContent = groupTitle || `${groupColor} group`;
+    }
+
+    tabItem.appendChild(groupBadge);
+  }
 
   // Pinned badge - Clickable button to toggle pin state
   // Shows 📌 for pinned tabs, or pin outline for unpinned (on hover)
@@ -580,6 +711,49 @@ function toggleDuplicateFilter() {
   toggleBtn.classList.toggle('active', duplicateFilterActive);
 
   renderTabs(currentSearchTerm);
+}
+
+/**
+ * Clears all active filters and resets to default view.
+ *
+ * Resets:
+ * - Search box (clears text)
+ * - Duplicate filter (deactivates)
+ * - Group filter (shows all groups)
+ * - Sort option (back to default)
+ * - Global sort (unchecked, hidden)
+ */
+function clearFilters() {
+  // Clear search
+  const searchBox = document.getElementById('searchBox');
+  searchBox.value = '';
+  currentSearchTerm = '';
+
+  // Clear duplicate filter
+  duplicateFilterActive = false;
+  const duplicateToggle = document.getElementById('duplicateToggle');
+  duplicateToggle.classList.remove('active');
+
+  // Clear group filter
+  activeGroupFilter = null;
+
+  // Reset sort to default
+  currentSortOption = 'default';
+  const sortDropdown = document.getElementById('sortDropdown');
+  sortDropdown.value = 'default';
+
+  // Reset global sort
+  globalSortEnabled = false;
+  const globalSortCheckbox = document.getElementById('globalSortCheckbox');
+  globalSortCheckbox.checked = false;
+  document.getElementById('globalSortContainer').style.display = 'none';
+
+  // Save to localStorage
+  localStorage.setItem('tabManagerSortOption', 'default');
+  localStorage.setItem('tabManagerGlobalSort', 'false');
+
+  // Re-render with cleared filters
+  renderTabs('');
 }
 
 /**
@@ -740,8 +914,33 @@ async function loadTabs() {
  * - Search box input (real-time filtering)
  * - Duplicate toggle button
  * - Close duplicates button
+ * - Sort dropdown (with global sort checkbox visibility)
+ * - Global sort checkbox
+ * - Clear filters button
+ *
+ * Also restores saved sort and global sort preferences from localStorage.
  */
 document.addEventListener('DOMContentLoaded', () => {
+  // Restore saved sort preference from localStorage
+  const savedSort = localStorage.getItem('tabManagerSortOption');
+  if (savedSort) {
+    currentSortOption = savedSort;
+    document.getElementById('sortDropdown').value = savedSort;
+  }
+
+  // Restore saved global sort preference from localStorage
+  const savedGlobalSort = localStorage.getItem('tabManagerGlobalSort');
+  if (savedGlobalSort === 'true') {
+    globalSortEnabled = true;
+    document.getElementById('globalSortCheckbox').checked = true;
+  }
+
+  // Show/hide global sort checkbox based on sort option
+  const globalSortContainer = document.getElementById('globalSortContainer');
+  if (currentSortOption !== 'default') {
+    globalSortContainer.style.display = 'block';
+  }
+
   // Load and display all tabs
   loadTabs();
 
@@ -759,4 +958,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // "Close Duplicates" button
   document.getElementById('closeDuplicatesBtn').addEventListener('click', closeDuplicateTabs);
+
+  // Sort dropdown - Save preference, show/hide global sort checkbox, and re-render
+  document.getElementById('sortDropdown').addEventListener('change', (e) => {
+    currentSortOption = e.target.value;
+    localStorage.setItem('tabManagerSortOption', currentSortOption);
+
+    // Show/hide global sort checkbox
+    if (currentSortOption === 'default') {
+      globalSortContainer.style.display = 'none';
+      globalSortEnabled = false;
+      document.getElementById('globalSortCheckbox').checked = false;
+    } else {
+      globalSortContainer.style.display = 'block';
+    }
+
+    renderTabs(currentSearchTerm);
+  });
+
+  // Global sort checkbox - Toggle global sorting
+  document.getElementById('globalSortCheckbox').addEventListener('change', (e) => {
+    globalSortEnabled = e.target.checked;
+    localStorage.setItem('tabManagerGlobalSort', globalSortEnabled.toString());
+    renderTabs(currentSearchTerm);
+  });
+
+  // "Clear Filters" button
+  document.getElementById('clearFiltersBtn').addEventListener('click', clearFilters);
 });

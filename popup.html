@@ -26,6 +26,31 @@
       <button id="closeDuplicatesBtn" class="close-duplicates-btn">Close Duplicates</button>
     </div>
 
+    <!-- Sort and filter controls -->
+    <div class="sort-filter-controls">
+      <!-- Sort dropdown to organize tabs -->
+      <select id="sortDropdown" class="sort-dropdown">
+        <option value="default">Sort: Default (by group)</option>
+        <option value="title-asc">Sort: Title (A→Z)</option>
+        <option value="title-desc">Sort: Title (Z→A)</option>
+        <option value="url-asc">Sort: URL (A→Z)</option>
+        <option value="url-desc">Sort: URL (Z→A)</option>
+        <option value="age-newest">Sort: Newest First</option>
+        <option value="age-oldest">Sort: Oldest First</option>
+      </select>
+
+      <!-- Clear all active filters button -->
+      <button id="clearFiltersBtn" class="clear-filters-btn">Clear Filters</button>
+    </div>
+
+    <!-- Global sort checkbox (only visible when sort is not default) -->
+    <div id="globalSortContainer" class="global-sort-container" style="display: none;">
+      <label class="global-sort-label">
+        <input type="checkbox" id="globalSortCheckbox" class="global-sort-checkbox">
+        <span>Sort globally (across all groups)</span>
+      </label>
+    </div>
+
     <!-- Search box for filtering tabs by title, URL, or group name -->
     <input type="text" id="searchBox" class="search-box" placeholder="Search tabs and groups...">
 
