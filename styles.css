@@ -37,6 +37,20 @@ h1 {
   margin: 0 0 4px 0;
   font-size: 18px;
   color: #333;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-icon {
+  font-size: 14px;
+  cursor: help;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.info-icon:hover {
+  opacity: 1;
 }
 
 .subtitle {
@@ -293,6 +307,51 @@ h1 {
   border-radius: 10px;  /* Rounded pill shape */
   font-size: 10px;
   font-weight: 600;
+}
+
+/* Status badges (pinned, audio, muted) */
+.status-badge {
+  flex-shrink: 0;
+  font-size: 12px;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+.muted-badge {
+  opacity: 0.6;
+}
+
+/*
+ * ============================================================================
+ * AGE-BASED COLOR CODING
+ * ============================================================================
+ * Color-codes tab border based on last access time (4 levels):
+ * - Green: ≤ 2 hours
+ * - Yellow: ≤ 24 hours
+ * - Orange: ≤ 1 week
+ * - Red: > 1 week
+ * Active tab always gets blue border regardless of age.
+ */
+
+.tab-item.age-recent {
+  border-left-color: #34A853;  /* Green - ≤ 2 hours */
+}
+
+.tab-item.age-hours {
+  border-left-color: #FBBC04;  /* Yellow - ≤ 24 hours */
+}
+
+.tab-item.age-days {
+  border-left-color: #E8710A;  /* Orange - ≤ 1 week */
+}
+
+.tab-item.age-week {
+  border-left-color: #D93025;  /* Red - > 1 week */
+}
+
+/* Active tab overrides age color - blue always wins */
+.tab-item.active {
+  border-left-color: #1A73E8 !important;  /* Blue always wins */
 }
 
 /*

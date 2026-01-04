@@ -103,6 +103,62 @@ function buildDuplicateMap(tabs) {
   return counts;
 }
 
+/**
+ * Calculates age in minutes for a tab based on lastAccessed timestamp.
+ *
+ * @param {Object} tab - Chrome tab object
+ * @returns {number} Age in minutes, or -1 if unknown
+ */
+function getTabAgeMinutes(tab) {
+  if (!tab.lastAccessed) return -1;
+  return (Date.now() - tab.lastAccessed) / (1000 * 60);
+}
+
+/**
+ * Calculates age class for visual color-coding of tab borders.
+ *
+ * Color scheme (4 levels):
+ * - Green (≤2 hours): Recently accessed
+ * - Yellow (≤24 hours): Accessed hours ago
+ * - Orange (≤1 week): Days old
+ * - Red (>1 week): Very old tabs
+ *
+ * @param {Object} tab - Chrome tab object
+ * @returns {string} CSS class: 'age-recent', 'age-hours', 'age-days', or 'age-week'
+ */
+function getTabAgeClass(tab) {
+  const ageMinutes = getTabAgeMinutes(tab);
+  if (ageMinutes < 0) return 'age-unknown';
+  if (ageMinutes <= 120) return 'age-recent';      // ≤ 2 hours (green)
+  if (ageMinutes <= 1440) return 'age-hours';      // ≤ 24 hours (yellow)
+  if (ageMinutes <= 10080) return 'age-days';      // ≤ 1 week (orange)
+  return 'age-week';                               // > 1 week (red)
+}
+
+/**
+ * Formats time since last access in human-readable form.
+ *
+ * Examples: "Just now", "5m ago", "2h ago", "3d ago"
+ *
+ * @param {number} timestamp - lastAccessed timestamp (ms)
+ * @returns {string} Formatted string
+ */
+function formatTimeSince(timestamp) {
+  if (!timestamp) return 'Never accessed';
+
+  const ageMs = Date.now() - timestamp;
+  const ageMinutes = Math.floor(ageMs / (1000 * 60));
+
+  if (ageMinutes < 1) return 'Just now';
+  if (ageMinutes < 60) return `${ageMinutes}m ago`;
+
+  const ageHours = Math.floor(ageMinutes / 60);
+  if (ageHours < 24) return `${ageHours}h ago`;
+
+  const ageDays = Math.floor(ageHours / 24);
+  return `${ageDays}d ago`;
+}
+
 /*
  * ============================================================================
  * TAB ACTIONS (Close, Activate)
@@ -123,6 +179,7 @@ function buildDuplicateMap(tabs) {
  */
 async function closeTab(tabId, event) {
   event.stopPropagation(); // Don't activate the tab when closing
+  event.preventDefault();  // Extra safety: prevent any default behavior
 
   // Disable button immediately to prevent double-clicks
   if (event.target) {
@@ -130,7 +187,7 @@ async function closeTab(tabId, event) {
   }
 
   try {
-    // Chrome API: Remove a single tab by ID
+    // Chrome API: Remove ONLY this specific tab by ID (not duplicates)
     await chrome.tabs.remove(tabId);
   } catch (error) {
     console.error('Error closing tab:', tabId, error);
@@ -194,6 +251,10 @@ async function activateTab(tabId, windowId) {
  * - Group filter: Tab belongs to specific group
  * All active filters must match for a tab to be visible.
  *
+ * AUTO-DISABLE DUPLICATE FILTER:
+ * If "Show Only Duplicates" is active but no duplicates remain,
+ * the filter is automatically disabled to avoid confusion.
+ *
  * @param {string} searchTerm - Optional search filter
  */
 function renderTabs(searchTerm = '') {
@@ -221,6 +282,20 @@ function renderTabs(searchTerm = '') {
   const matchesAllFilters = (tab) => {
     return matchesSearch(tab) && matchesDuplicateFilter(tab);
   };
+
+  // Check if duplicate filter should be auto-disabled
+  if (duplicateFilterActive) {
+    const visibleTabs = allTabs.filter(matchesAllFilters);
+    if (visibleTabs.length === 0) {
+      // No duplicates remaining - auto-disable filter
+      duplicateFilterActive = false;
+      const toggleBtn = document.getElementById('duplicateToggle');
+      toggleBtn.classList.remove('active');
+      // Re-render without the duplicate filter
+      renderTabs(searchTerm);
+      return;
+    }
+  }
 
   // Render grouped tabs
   organized.groups.forEach(group => {
@@ -337,13 +412,19 @@ function renderTabs(searchTerm = '') {
 function createTabElement(tab) {
   const tabItem = document.createElement('div');
   tabItem.className = 'tab-item';
-  // Tooltip shows full title and URL (helpful for truncated titles)
-  tabItem.title = `${tab.title}\n${tab.url}`;
+
+  // Tooltip shows full title, URL, and last accessed time
+  const lastAccessed = formatTimeSince(tab.lastAccessed);
+  tabItem.title = `${tab.title}\n${tab.url}\n\nLast accessed: ${lastAccessed}`;
 
   // Highlight active tab with special styling
   if (tab.id === activeTabId) {
     tabItem.classList.add('active');
   }
+
+  // Add age-based color coding (green/yellow/orange border)
+  const ageClass = getTabAgeClass(tab);
+  tabItem.classList.add(ageClass);
 
   // Favicon - Shows website icon or fallback document emoji
   const favicon = document.createElement('img');
@@ -354,6 +435,31 @@ function createTabElement(tab) {
     favicon.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><text y="12" font-size="12">📄</text></svg>';
   };
   tabItem.appendChild(favicon);
+
+  // Pinned badge - Shows 📌 for pinned tabs
+  if (tab.pinned) {
+    const pinnedBadge = document.createElement('span');
+    pinnedBadge.className = 'status-badge pinned-badge';
+    pinnedBadge.textContent = '📌';
+    pinnedBadge.title = 'Pinned tab';
+    tabItem.appendChild(pinnedBadge);
+  }
+
+  // Audio badges - Shows 🔇 for muted or 🔊 for audible tabs
+  // NOTE: Using optional chaining for null-safety
+  if (tab.mutedInfo?.muted) {
+    const mutedBadge = document.createElement('span');
+    mutedBadge.className = 'status-badge muted-badge';
+    mutedBadge.textContent = '🔇';
+    mutedBadge.title = 'Muted';
+    tabItem.appendChild(mutedBadge);
+  } else if (tab.audible) {
+    const audioBadge = document.createElement('span');
+    audioBadge.className = 'status-badge audio-badge';
+    audioBadge.textContent = '🔊';
+    audioBadge.title = 'Playing audio';
+    tabItem.appendChild(audioBadge);
+  }
 
   // Tab title (truncated via CSS if too long)
   const titleSpan = document.createElement('span');
