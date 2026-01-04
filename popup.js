@@ -236,6 +236,62 @@ async function activateTab(tabId, windowId) {
   await chrome.windows.update(windowId, { focused: true });
 }
 
+/**
+ * Toggles the pinned state of a tab.
+ *
+ * Pinned tabs:
+ * - Stay at the left side of the tab bar
+ * - Can't be accidentally closed
+ * - Useful for frequently accessed tabs
+ *
+ * IMPORTANT: event.stopPropagation() prevents click from activating tab.
+ *
+ * @param {number} tabId - Chrome tab ID to toggle
+ * @param {boolean} currentPinnedState - Current pinned state
+ * @param {Event} event - Click event from pin button
+ */
+async function togglePinTab(tabId, currentPinnedState, event) {
+  event.stopPropagation(); // Don't activate tab when toggling pin
+  event.preventDefault();
+
+  try {
+    await chrome.tabs.update(tabId, { pinned: !currentPinnedState });
+  } catch (error) {
+    console.error('Error toggling pin state:', tabId, error);
+  }
+
+  // Refresh UI to show updated state
+  await loadTabs();
+}
+
+/**
+ * Toggles the muted state of a tab.
+ *
+ * Muted tabs:
+ * - Audio is silenced but video continues playing
+ * - Useful for background music/videos
+ * - Can be toggled without switching to the tab
+ *
+ * IMPORTANT: event.stopPropagation() prevents click from activating tab.
+ *
+ * @param {number} tabId - Chrome tab ID to toggle
+ * @param {boolean} currentMutedState - Current muted state
+ * @param {Event} event - Click event from mute button
+ */
+async function toggleMuteTab(tabId, currentMutedState, event) {
+  event.stopPropagation(); // Don't activate tab when toggling mute
+  event.preventDefault();
+
+  try {
+    await chrome.tabs.update(tabId, { muted: !currentMutedState });
+  } catch (error) {
+    console.error('Error toggling mute state:', tabId, error);
+  }
+
+  // Refresh UI to show updated state
+  await loadTabs();
+}
+
 /*
  * ============================================================================
  * RENDERING FUNCTIONS
@@ -436,30 +492,40 @@ function createTabElement(tab) {
   };
   tabItem.appendChild(favicon);
 
-  // Pinned badge - Shows 📌 for pinned tabs
-  if (tab.pinned) {
-    const pinnedBadge = document.createElement('span');
-    pinnedBadge.className = 'status-badge pinned-badge';
-    pinnedBadge.textContent = '📌';
-    pinnedBadge.title = 'Pinned tab';
-    tabItem.appendChild(pinnedBadge);
+  // Pinned badge - Clickable button to toggle pin state
+  // Shows 📌 for pinned tabs, or pin outline for unpinned (on hover)
+  const pinnedBadge = document.createElement('button');
+  pinnedBadge.className = tab.pinned ? 'status-badge pinned-badge pinned' : 'status-badge pinned-badge unpinned';
+  pinnedBadge.textContent = tab.pinned ? '📌' : '📍';
+  pinnedBadge.title = tab.pinned ? 'Click to unpin tab' : 'Click to pin tab';
+  pinnedBadge.addEventListener('click', (e) => togglePinTab(tab.id, tab.pinned, e));
+  tabItem.appendChild(pinnedBadge);
+
+  // Audio badges - Clickable buttons to toggle mute state
+  // Shows 🔇 for muted, 🔊 for audible, or 🔈 for silent tabs (on hover)
+  // NOTE: Using optional chaining for null-safety
+  const isMuted = tab.mutedInfo?.muted;
+  const isAudible = tab.audible;
+
+  const audioBadge = document.createElement('button');
+  audioBadge.className = 'status-badge audio-badge';
+
+  if (isMuted) {
+    audioBadge.textContent = '🔇';
+    audioBadge.title = 'Click to unmute';
+    audioBadge.classList.add('muted');
+  } else if (isAudible) {
+    audioBadge.textContent = '🔊';
+    audioBadge.title = 'Click to mute';
+    audioBadge.classList.add('audible');
+  } else {
+    audioBadge.textContent = '🔈';
+    audioBadge.title = 'Click to mute (no audio playing)';
+    audioBadge.classList.add('silent');
   }
 
-  // Audio badges - Shows 🔇 for muted or 🔊 for audible tabs
-  // NOTE: Using optional chaining for null-safety
-  if (tab.mutedInfo?.muted) {
-    const mutedBadge = document.createElement('span');
-    mutedBadge.className = 'status-badge muted-badge';
-    mutedBadge.textContent = '🔇';
-    mutedBadge.title = 'Muted';
-    tabItem.appendChild(mutedBadge);
-  } else if (tab.audible) {
-    const audioBadge = document.createElement('span');
-    audioBadge.className = 'status-badge audio-badge';
-    audioBadge.textContent = '🔊';
-    audioBadge.title = 'Playing audio';
-    tabItem.appendChild(audioBadge);
-  }
+  audioBadge.addEventListener('click', (e) => toggleMuteTab(tab.id, isMuted, e));
+  tabItem.appendChild(audioBadge);
 
   // Tab title (truncated via CSS if too long)
   const titleSpan = document.createElement('span');
@@ -483,9 +549,12 @@ function createTabElement(tab) {
   closeBtn.addEventListener('click', (e) => closeTab(tab.id, e));
   tabItem.appendChild(closeBtn);
 
-  // Click tab to activate it (but not when clicking close button)
+  // Click tab to activate it (but not when clicking action buttons)
   tabItem.addEventListener('click', (e) => {
-    if (e.target === closeBtn) return;
+    // Don't activate tab when clicking action buttons
+    if (e.target === closeBtn || e.target === pinnedBadge || e.target === audioBadge) {
+      return;
+    }
     activateTab(tab.id, tab.windowId);
   });
 
