@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Tab Manager</h1>
+    <p class="subtitle">by Steve Souza & Claude Code (01/26)</p>
+    <p class="total">Total tab groups: <span id="groupCount">0</span></p>
+    <p class="total">Total tabs: <span id="tabCount">0</span></p>
+    <div class="duplicate-controls">
+      <button id="duplicateToggle" class="duplicate-toggle">Show Only Duplicates</button>
+      <button id="closeDuplicatesBtn" class="close-duplicates-btn">Close Duplicates</button>
+    </div>
+    <input type="text" id="searchBox" class="search-box" placeholder="Search tabs and groups...">
+    <div id="tabList"></div>
+    <div class="footer">
+      Created by Steve Souza | Experimental Project
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

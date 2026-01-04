@@ -1,0 +1,304 @@
+/*
+ * Tab Manager Chrome Extension
+ * Created by: Steve Souza
+ *
+ * This is an experimental learning project.
+ * Can be removed at any time.
+ */
+
+body {
+  width: 350px;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+}
+
+.container {
+  padding: 16px;
+  padding-bottom: 8px;
+}
+
+h1 {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.subtitle {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  color: #888;
+}
+
+.total {
+  margin: 0 0 12px 0;
+  color: #666;
+}
+
+#tabCount {
+  font-weight: bold;
+  color: #4688F1;
+}
+
+/* Duplicate controls */
+.duplicate-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.duplicate-toggle,
+.close-duplicates-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.duplicate-toggle {
+  background: #f8f9fa;
+  color: #5f6368;
+}
+
+.duplicate-toggle:hover {
+  background: #e8eaed;
+}
+
+.duplicate-toggle.active {
+  background: #1A73E8;
+  color: white;
+  border-color: #1A73E8;
+}
+
+.close-duplicates-btn {
+  background: #E8710A;
+  color: white;
+  border-color: #E8710A;
+}
+
+.close-duplicates-btn:hover:not(:disabled) {
+  background: #D66609;
+  border-color: #D66609;
+}
+
+.close-duplicates-btn:disabled {
+  background: #dadce0;
+  color: #80868b;
+  border-color: #dadce0;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Search box */
+.search-box {
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.search-box:focus {
+  outline: none;
+  border-color: #4688F1;
+}
+
+/* Tab list container */
+#tabList {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+/* Group container */
+.group-container {
+  margin-bottom: 12px;
+}
+
+/* Group header */
+.group-header {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 13px;
+  color: white;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+
+.group-header:hover {
+  opacity: 0.85;
+}
+
+.group-header.filtered {
+  box-shadow: 0 0 0 2px #333;
+}
+
+.group-name {
+  flex: 1;
+}
+
+.tab-count {
+  font-size: 11px;
+  opacity: 0.9;
+  margin-left: 4px;
+}
+
+/* Group header close button */
+.group-header .close-btn {
+  opacity: 0;
+  margin-left: 8px;
+  transition: opacity 0.15s;
+}
+
+.group-header:hover .close-btn {
+  opacity: 1;
+}
+
+/* Group colors - matching Chrome's tab group colors */
+.group-header[data-group-color="grey"] { background-color: #5F6368; }
+.group-header[data-group-color="blue"] { background-color: #1A73E8; }
+.group-header[data-group-color="red"] { background-color: #D93025; }
+.group-header[data-group-color="yellow"] { background-color: #F9AB00; }
+.group-header[data-group-color="green"] { background-color: #188038; }
+.group-header[data-group-color="pink"] { background-color: #D01884; }
+.group-header[data-group-color="purple"] { background-color: #8430CE; }
+.group-header[data-group-color="cyan"] { background-color: #007B83; }
+.group-header[data-group-color="orange"] { background-color: #E8710A; }
+
+/* Tab item */
+.tab-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin: 2px 0;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  color: #333;
+  transition: background 0.1s, border-color 0.1s;
+  position: relative;
+}
+
+.tab-item:hover {
+  background: #e8eaed;
+}
+
+.tab-item:active {
+  background: #dadce0;
+}
+
+/* Active tab indicator */
+.tab-item.active {
+  background: #e8f0fe;
+  border-left-color: #1A73E8;
+}
+
+.tab-item.active:hover {
+  background: #d2e3fc;
+}
+
+/* Favicon */
+.favicon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+/* Tab title */
+.tab-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Duplicate badge */
+.duplicate-badge {
+  flex-shrink: 0;
+  padding: 2px 6px;
+  background: #E8710A;
+  color: white;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* Close button */
+.close-btn {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: none;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.1s;
+}
+
+.tab-item:hover .close-btn {
+  opacity: 0.6;
+}
+
+.close-btn:hover {
+  opacity: 1 !important;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.group-header .close-btn:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Ungrouped container */
+.ungrouped-container {
+  margin-bottom: 12px;
+}
+
+.ungrouped-header {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #5F6368;
+  background-color: #f1f3f4;
+}
+
+.ungrouped-header .tab-count {
+  color: #5F6368;
+  opacity: 0.8;
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 8px 0 4px 0;
+  font-size: 11px;
+  color: #999;
+  border-top: 1px solid #eee;
+  margin-top: 8px;
+}
