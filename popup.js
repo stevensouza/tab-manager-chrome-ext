@@ -571,9 +571,13 @@ document.addEventListener('DOMContentLoaded', () => {
   loadTabs();
 
   // Real-time search as user types
-  document.getElementById('searchBox').addEventListener('input', (e) => {
+  const searchBox = document.getElementById('searchBox');
+  searchBox.addEventListener('input', (e) => {
     renderTabs(e.target.value);
   });
+
+  // Auto-focus search box on popup open
+  searchBox.focus();
 
   // Toggle "Show Only Duplicates" filter
   document.getElementById('duplicateToggle').addEventListener('click', toggleDuplicateFilter);
