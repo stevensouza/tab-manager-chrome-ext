@@ -75,13 +75,14 @@ This Chrome extension helps you manage browser tabs with features like search, f
 ### Default View (No Filters)
 ```
 ┌─────────────────────────────────────────┐
-│ Tab Manager                             │
+│ Tab Manager                        ℹ️   │
 │ by Steve Souza & Claude Code (01/26)    │
 │                                         │
 │ Total tab groups: 3                     │
 │ Total tabs: 12                          │
 │                                         │
 │ [Show Only Duplicates] [Close Dupes]   │
+│ [Sort: Default (by group)▼][Clear]     │ ← Sort dropdown + Clear Filters
 │ ┌─────────────────────────────────────┐ │
 │ │ Search tabs and groups...           │ │
 │ └─────────────────────────────────────┘ │
@@ -89,41 +90,43 @@ This Chrome extension helps you manage browser tabs with features like search, f
 │ ┌───────────────────────────────────┐   │
 │ │ 🔵 Work (5)                    [×]│   │ ← Group header (blue)
 │ └───────────────────────────────────┘   │
-│   🌐 GitHub - Pull Requests       [×]   │ ← Tab with favicon
-│   📧 Gmail - Inbox           [2×] [×]   │ ← Duplicate badge
-│   📊 Google Sheets - Q1 Data      [×]   │ ← Active tab (blue border)
-│   📧 Gmail - Inbox           [2×] [×]   │ ← Another duplicate
-│   📝 Notion - Projects            [×]   │
+│  🌐📌🔈 GitHub - Pull Requests     [×]   │ ← Pinned tab (green border=recent)
+│  📧 Gmail - Inbox          [2×] 🔇  [×]  │ ← Muted duplicate (yellow=hours)
+│  📊 Google Sheets - Q1 Data       [×]   │ ← Active tab (blue border)
+│  📧 Gmail - Inbox          [2×]     [×]  │ ← Duplicate (orange=days)
+│  📝 Notion - Projects              [×]  │
 │                                         │
 │ ┌───────────────────────────────────┐   │
 │ │ 🟢 Research (4)                [×]│   │ ← Group header (green)
 │ └───────────────────────────────────┘   │
-│   📄 Wikipedia - React              [×] │
-│   🔍 Stack Overflow - Async    [3×] [×] │
-│   📰 Medium - Web Development       [×] │
-│   🔍 Stack Overflow - Async    [3×] [×] │
+│  📄 Wikipedia - React              [×]  │
+│  🔍 Stack Overflow - Async    [3×] [×]  │
+│  📰 Medium - Web Dev               [×]  │
+│  🔍 Stack Overflow - Async    [3×] [×]  │
 │                                         │
 │ ┌───────────────────────────────────┐   │
 │ │ Ungrouped Tabs (3)                │   │
 │ └───────────────────────────────────┘   │
-│   🎵 YouTube - Music                [×] │
-│   🛒 Amazon - Cart              [2×][×] │
-│   🛒 Amazon - Cart              [2×][×] │
+│  🎵🔊 YouTube - Music              [×]  │ ← Playing audio
+│  🛒 Amazon - Cart             [2×] [×]  │
+│  🛒 Amazon - Cart             [2×] [×]  │
 │                                         │
 │ Created by Steve Souza | Experimental   │
 └─────────────────────────────────────────┘
 ```
 
-### With "Show Only Duplicates" Active
+### With Sort by Title (A→Z) - Per-Group Mode
 ```
 ┌─────────────────────────────────────────┐
-│ Tab Manager                             │
+│ Tab Manager                        ℹ️   │
 │ by Steve Souza & Claude Code (01/26)    │
 │                                         │
 │ Total tab groups: 3                     │
 │ Total tabs: 12                          │
 │                                         │
-│ [Show Only Duplicates✓][Close Dupes]   │ ← Toggle active (blue)
+│ [Show Only Duplicates] [Close Dupes]   │
+│ [Sort: Title (A→Z)▼]      [Clear]      │ ← Sort active
+│ ☐ Sort globally (across all groups)    │ ← Checkbox (unchecked)
 │ ┌─────────────────────────────────────┐ │
 │ │ Search tabs and groups...           │ │
 │ └─────────────────────────────────────┘ │
@@ -131,57 +134,81 @@ This Chrome extension helps you manage browser tabs with features like search, f
 │ ┌───────────────────────────────────┐   │
 │ │ 🔵 Work (5)                    [×]│   │
 │ └───────────────────────────────────┘   │
-│   📧 Gmail - Inbox           [2×] [×]   │ ← Only duplicates shown
-│   📧 Gmail - Inbox           [2×] [×]   │
+│  📧 Gmail - Inbox          [2×] 🔇  [×]  │ ← Sorted alphabetically
+│  📧 Gmail - Inbox          [2×]     [×]  │    within Work group
+│  🌐📌🔈 GitHub - Pull Req...       [×]   │
+│  📊 Google Sheets - Q1 Data       [×]   │
+│  📝 Notion - Projects              [×]  │
 │                                         │
 │ ┌───────────────────────────────────┐   │
 │ │ 🟢 Research (4)                [×]│   │
 │ └───────────────────────────────────┘   │
-│   🔍 Stack Overflow - Async    [3×] [×] │
-│   🔍 Stack Overflow - Async    [3×] [×] │
-│   🔍 Stack Overflow - Async    [3×] [×] │
+│  📰 Medium - Web Dev               [×]  │ ← Sorted alphabetically
+│  🔍 Stack Overflow - Async    [3×] [×]  │    within Research group
+│  🔍 Stack Overflow - Async    [3×] [×]  │
+│  📄 Wikipedia - React              [×]  │
 │                                         │
 │ ┌───────────────────────────────────┐   │
 │ │ Ungrouped Tabs (3)                │   │
 │ └───────────────────────────────────┘   │
-│   🛒 Amazon - Cart              [2×][×] │
-│   🛒 Amazon - Cart              [2×][×] │
+│  🛒 Amazon - Cart             [2×] [×]  │
+│  🛒 Amazon - Cart             [2×] [×]  │
+│  🎵🔊 YouTube - Music              [×]  │
 │                                         │
 │ Created by Steve Souza | Experimental   │
 └─────────────────────────────────────────┘
 ```
 
-### With Search Filter "stack"
+### With Global Sort (Title A→Z) - All Tabs Together
 ```
 ┌─────────────────────────────────────────┐
-│ Tab Manager                             │
+│ Tab Manager                        ℹ️   │
 │ by Steve Souza & Claude Code (01/26)    │
 │                                         │
 │ Total tab groups: 3                     │
 │ Total tabs: 12                          │
 │                                         │
 │ [Show Only Duplicates] [Close Dupes]   │
+│ [Sort: Title (A→Z)▼]      [Clear]      │
+│ ☑ Sort globally (across all groups)    │ ← Checkbox CHECKED
 │ ┌─────────────────────────────────────┐ │
-│ │ stack                               │ │ ← Search active
+│ │ Search tabs and groups...           │ │
 │ └─────────────────────────────────────┘ │
 │                                         │
-│ ┌───────────────────────────────────┐   │
-│ │ 🟢 Research (4)                [×]│   │ ← Only matching group
-│ └───────────────────────────────────┘   │
-│   🔍 Stack Overflow - Async    [3×] [×] │ ← Matching tabs only
-│   🔍 Stack Overflow - Async    [3×] [×] │
-│   🔍 Stack Overflow - Async    [3×] [×] │
+│  🛒 🔘No Group Amazon - Cart  [2×] [×]  │ ← Flat list, alphabetically
+│  🛒 🔘No Group Amazon - Cart  [2×] [×]  │    sorted across ALL groups
+│  📧 🔵Work Gmail - Inbox     [2×] 🔇[×] │ ← Group badge shown
+│  📧 🔵Work Gmail - Inbox     [2×]   [×] │
+│  🌐📌🔈🔵Work GitHub - Pull...     [×]   │
+│  📊 🔵Work Google Sheets...        [×]  │
+│  📰 🟢Research Medium - Web Dev    [×]  │
+│  📝 🔵Work Notion - Projects       [×]  │
+│  🔍 🟢Research Stack Overflow [3×] [×]  │
+│  🔍 🟢Research Stack Overflow [3×] [×]  │
+│  🔍 🟢Research Stack Overflow [3×] [×]  │
+│  📄 🟢Research Wikipedia - React   [×]  │
+│  🎵🔊🔘No Group YouTube - Music    [×]  │
 │                                         │
 │ Created by Steve Souza | Experimental   │
 └─────────────────────────────────────────┘
 ```
 
 ### Legend
-- 🔵🟢🔴🟡 - Group color indicators
+- 🔵🟢🔴🟡 - Group color indicators (badges in global sort mode)
+- 🔘No Group - Ungrouped tab badge (gray, appears in global sort mode)
 - [×] - Close button (appears on hover)
 - [2×][3×] - Duplicate count badge (orange)
+- 📌 - Pinned tab indicator (clickable toggle)
+- 🔇 - Muted tab (clickable toggle)
+- 🔊 - Playing audio (clickable to mute)
+- 🔈 - Silent tab, mute button (appears on hover)
 - Blue left border - Active tab indicator
+- 🟢 Green border - Recently accessed (≤2 hours)
+- 🟡 Yellow border - Accessed hours ago (≤24 hours)
+- 🟠 Orange border - Days old (≤1 week)
+- 🔴 Red border - Very old (>1 week)
 - Favicon emojis - Website icons (🌐📧📊🔍📄📰🎵🛒)
+- ℹ️ - Info icon (hover to see age color legend)
 
 ## Installation
 
@@ -198,7 +225,7 @@ This Chrome extension helps you manage browser tabs with features like search, f
 
 4. **Load Extension:**
    - Click "Load unpacked"
-   - Select the `chrome_ext` folder
+   - Select the `tab-manager-chrome-ext` folder
    - Extension icon appears in toolbar
 
 5. **Pin Extension (Optional):**
@@ -264,12 +291,13 @@ Click group header again to clear group filter.
 ## File Structure
 
 ```
-chrome_ext/
+tab-manager-chrome-ext/
 ├── manifest.json       # Extension configuration
 ├── background.js       # Badge counter (shows tab count)
 ├── popup.html          # Popup UI structure
-├── popup.js            # Main logic (search, filter, close, duplicates)
-├── styles.css          # Styling
+├── popup.js            # Main logic (search, filter, sort, duplicates)
+├── styles.css          # Styling (includes interactive buttons, age colors)
+├── icons/              # Extension icons (16, 32, 48, 128px)
 └── README.md           # This file
 ```
 
