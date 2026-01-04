@@ -1,13 +1,21 @@
 /*
- * Tab Manager Chrome Extension
+ * Tab Manager Chrome Extension - Styles
  * Created by: Steve Souza
  *
  * This is an experimental learning project.
  * Can be removed at any time.
  */
 
+/*
+ * ============================================================================
+ * BASE LAYOUT
+ * ============================================================================
+ * Chrome extension popups have fixed dimensions (not responsive).
+ * Using system font stack for native look across platforms.
+ */
+
 body {
-  width: 350px;
+  width: 350px;  /* Fixed width for extension popup */
   margin: 0;
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -18,6 +26,12 @@ body {
   padding: 16px;
   padding-bottom: 8px;
 }
+
+/*
+ * ============================================================================
+ * HEADER & ATTRIBUTION
+ * ============================================================================
+ */
 
 h1 {
   margin: 0 0 4px 0;
@@ -38,10 +52,16 @@ h1 {
 
 #tabCount {
   font-weight: bold;
-  color: #4688F1;
+  color: #4688F1;  /* Blue accent matching Chrome UI */
 }
 
-/* Duplicate controls */
+/*
+ * ============================================================================
+ * DUPLICATE CONTROLS
+ * ============================================================================
+ * Two-button layout: Toggle filter + Close duplicates action
+ */
+
 .duplicate-controls {
   display: flex;
   gap: 8px;
@@ -50,7 +70,7 @@ h1 {
 
 .duplicate-toggle,
 .close-duplicates-btn {
-  flex: 1;
+  flex: 1;  /* Equal width buttons */
   padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -60,6 +80,7 @@ h1 {
   transition: all 0.2s;
 }
 
+/* Toggle button - Grey when inactive, blue when active */
 .duplicate-toggle {
   background: #f8f9fa;
   color: #5f6368;
@@ -70,31 +91,37 @@ h1 {
 }
 
 .duplicate-toggle.active {
-  background: #1A73E8;
+  background: #1A73E8;  /* Blue when filter is on */
   color: white;
   border-color: #1A73E8;
 }
 
+/* Close duplicates button - Orange to indicate destructive action */
 .close-duplicates-btn {
-  background: #E8710A;
+  background: #E8710A;  /* Orange matches duplicate badges */
   color: white;
   border-color: #E8710A;
 }
 
 .close-duplicates-btn:hover:not(:disabled) {
-  background: #D66609;
+  background: #D66609;  /* Darker orange on hover */
   border-color: #D66609;
 }
 
 .close-duplicates-btn:disabled {
-  background: #dadce0;
+  background: #dadce0;  /* Grey when no duplicates exist */
   color: #80868b;
   border-color: #dadce0;
   cursor: not-allowed;
   opacity: 0.6;
 }
 
-/* Search box */
+/*
+ * ============================================================================
+ * SEARCH BOX
+ * ============================================================================
+ */
+
 .search-box {
   width: 100%;
   padding: 8px 12px;
@@ -107,22 +134,32 @@ h1 {
 
 .search-box:focus {
   outline: none;
-  border-color: #4688F1;
+  border-color: #4688F1;  /* Blue border when focused */
 }
 
-/* Tab list container */
+/*
+ * ============================================================================
+ * TAB LIST CONTAINER
+ * ============================================================================
+ */
+
 #tabList {
-  max-height: 400px;
+  max-height: 400px;  /* Scrollable if many tabs */
   overflow-y: auto;
   margin-bottom: 12px;
 }
 
-/* Group container */
+/*
+ * ============================================================================
+ * GROUP STYLING
+ * ============================================================================
+ */
+
 .group-container {
   margin-bottom: 12px;
 }
 
-/* Group header */
+/* Group header - Colored bar matching Chrome's native tab group colors */
 .group-header {
   display: flex;
   align-items: center;
@@ -132,7 +169,7 @@ h1 {
   font-weight: 600;
   font-size: 13px;
   color: white;
-  cursor: pointer;
+  cursor: pointer;  /* Clickable to filter by group */
   user-select: none;
   position: relative;
 }
@@ -141,12 +178,13 @@ h1 {
   opacity: 0.85;
 }
 
+/* Visual indicator when group is actively filtered */
 .group-header.filtered {
-  box-shadow: 0 0 0 2px #333;
+  box-shadow: 0 0 0 2px #333;  /* Dark border around filtered group */
 }
 
 .group-name {
-  flex: 1;
+  flex: 1;  /* Takes up remaining space */
 }
 
 .tab-count {
@@ -155,7 +193,7 @@ h1 {
   margin-left: 4px;
 }
 
-/* Group header close button */
+/* Group header close button - Hidden until hover */
 .group-header .close-btn {
   opacity: 0;
   margin-left: 8px;
@@ -163,10 +201,14 @@ h1 {
 }
 
 .group-header:hover .close-btn {
-  opacity: 1;
+  opacity: 1;  /* Reveal on hover */
 }
 
-/* Group colors - matching Chrome's tab group colors */
+/*
+ * Chrome Tab Group Colors
+ * These match Chrome's native tab group colors exactly.
+ * Color is set via data-group-color attribute in JS.
+ */
 .group-header[data-group-color="grey"] { background-color: #5F6368; }
 .group-header[data-group-color="blue"] { background-color: #1A73E8; }
 .group-header[data-group-color="red"] { background-color: #D93025; }
@@ -177,7 +219,12 @@ h1 {
 .group-header[data-group-color="cyan"] { background-color: #007B83; }
 .group-header[data-group-color="orange"] { background-color: #E8710A; }
 
-/* Tab item */
+/*
+ * ============================================================================
+ * TAB ITEM STYLING
+ * ============================================================================
+ */
+
 .tab-item {
   display: flex;
   align-items: center;
@@ -186,7 +233,7 @@ h1 {
   margin: 2px 0;
   background: #f8f9fa;
   border-radius: 4px;
-  border-left: 3px solid transparent;
+  border-left: 3px solid transparent;  /* Space reserved for active indicator */
   cursor: pointer;
   color: #333;
   transition: background 0.1s, border-color 0.1s;
@@ -194,51 +241,65 @@ h1 {
 }
 
 .tab-item:hover {
-  background: #e8eaed;
+  background: #e8eaed;  /* Light grey hover */
 }
 
 .tab-item:active {
-  background: #dadce0;
+  background: #dadce0;  /* Darker grey when clicked */
 }
 
-/* Active tab indicator */
+/*
+ * Active Tab Indicator
+ * Shows which tab is currently active in Chrome.
+ * Blue left border + light blue background.
+ */
 .tab-item.active {
-  background: #e8f0fe;
-  border-left-color: #1A73E8;
+  background: #e8f0fe;  /* Light blue background */
+  border-left-color: #1A73E8;  /* Blue left border */
 }
 
 .tab-item.active:hover {
-  background: #d2e3fc;
+  background: #d2e3fc;  /* Slightly darker blue on hover */
 }
 
-/* Favicon */
+/*
+ * ============================================================================
+ * TAB ITEM COMPONENTS
+ * ============================================================================
+ */
+
+/* Favicon - Website icon */
 .favicon {
   width: 16px;
   height: 16px;
-  flex-shrink: 0;
+  flex-shrink: 0;  /* Don't shrink if title is long */
   object-fit: contain;
 }
 
-/* Tab title */
+/* Tab title - Truncates if too long */
 .tab-title {
-  flex: 1;
+  flex: 1;  /* Takes up remaining space */
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  text-overflow: ellipsis;  /* Shows "..." if truncated */
+  white-space: nowrap;  /* Single line only */
 }
 
-/* Duplicate badge */
+/* Duplicate badge - Shows "2×", "3×", etc. */
 .duplicate-badge {
-  flex-shrink: 0;
+  flex-shrink: 0;  /* Don't shrink */
   padding: 2px 6px;
-  background: #E8710A;
+  background: #E8710A;  /* Orange to draw attention */
   color: white;
-  border-radius: 10px;
+  border-radius: 10px;  /* Rounded pill shape */
   font-size: 10px;
   font-weight: 600;
 }
 
-/* Close button */
+/*
+ * Close Button (×)
+ * Hidden by default, appears on hover.
+ * Used for both tab items and group headers.
+ */
 .close-btn {
   flex-shrink: 0;
   width: 20px;
@@ -254,24 +315,33 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
+  opacity: 0;  /* Hidden by default */
   transition: opacity 0.15s, background 0.1s;
 }
 
+/* Reveal close button on tab hover */
 .tab-item:hover .close-btn {
   opacity: 0.6;
 }
 
+/* Full opacity when hovering close button itself */
 .close-btn:hover {
   opacity: 1 !important;
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.1);  /* Subtle background on hover */
 }
 
+/* Slightly darker background for group header close button */
 .group-header .close-btn:hover {
   background: rgba(0, 0, 0, 0.2);
 }
 
-/* Ungrouped container */
+/*
+ * ============================================================================
+ * UNGROUPED TABS SECTION
+ * ============================================================================
+ * Tabs not in any Chrome tab group
+ */
+
 .ungrouped-container {
   margin-bottom: 12px;
 }
@@ -284,8 +354,8 @@ h1 {
   border-radius: 4px;
   font-weight: 600;
   font-size: 13px;
-  color: #5F6368;
-  background-color: #f1f3f4;
+  color: #5F6368;  /* Grey (not clickable like group headers) */
+  background-color: #f1f3f4;  /* Light grey background */
 }
 
 .ungrouped-header .tab-count {
@@ -293,7 +363,12 @@ h1 {
   opacity: 0.8;
 }
 
-/* Footer */
+/*
+ * ============================================================================
+ * FOOTER
+ * ============================================================================
+ */
+
 .footer {
   text-align: center;
   padding: 8px 0 4px 0;

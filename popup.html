@@ -6,20 +6,37 @@
 </head>
 <body>
   <div class="container">
+    <!-- Extension title and attribution -->
     <h1>Tab Manager</h1>
     <p class="subtitle">by Steve Souza & Claude Code (01/26)</p>
+
+    <!-- Tab statistics - Updated dynamically by popup.js -->
     <p class="total">Total tab groups: <span id="groupCount">0</span></p>
     <p class="total">Total tabs: <span id="tabCount">0</span></p>
+
+    <!-- Duplicate management controls -->
     <div class="duplicate-controls">
+      <!-- Toggle button to show only duplicate tabs (tabs with same URL) -->
       <button id="duplicateToggle" class="duplicate-toggle">Show Only Duplicates</button>
+
+      <!-- Button to close all duplicate tabs (keeps one of each URL) -->
       <button id="closeDuplicatesBtn" class="close-duplicates-btn">Close Duplicates</button>
     </div>
+
+    <!-- Search box for filtering tabs by title, URL, or group name -->
     <input type="text" id="searchBox" class="search-box" placeholder="Search tabs and groups...">
+
+    <!-- Main container where tabs and groups are rendered dynamically -->
+    <!-- This div starts empty - popup.js fills it with tab elements -->
     <div id="tabList"></div>
+
+    <!-- Footer attribution -->
     <div class="footer">
       Created by Steve Souza | Experimental Project
     </div>
   </div>
+
+  <!-- Load main application logic -->
   <script src="popup.js"></script>
 </body>
 </html>
