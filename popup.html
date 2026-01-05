@@ -14,8 +14,15 @@
     <p class="subtitle">by Steve Souza & Claude Code (01/26)</p>
 
     <!-- Tab statistics - Updated dynamically by popup.js -->
-    <p class="total">Total tab groups: <span id="groupCount">0</span></p>
-    <p class="total">Total tabs: <span id="tabCount">0</span></p>
+    <p class="stats-line">Total groups: <span id="groupCount">0</span> | Total tabs: <span id="tabCount">0</span></p>
+
+    <!-- Toggle button for collapsible controls -->
+    <button id="toggleControls" class="toggle-controls-btn" title="Show/hide filters and sorting options">
+      <span class="caret">▼</span> Filters & Sort
+    </button>
+
+    <!-- Collapsible controls section -->
+    <div id="controlsSection" class="controls-section collapsed">
 
     <!-- Duplicate management controls -->
     <div class="duplicate-controls">
@@ -37,6 +44,8 @@
         <option value="url-desc">Sort: URL (Z→A)</option>
         <option value="age-newest">Sort: Newest First</option>
         <option value="age-oldest">Sort: Oldest First</option>
+        <option value="most-visited">Sort: Most Visited First</option>
+        <option value="least-visited">Sort: Least Visited First</option>
       </select>
 
       <!-- Clear all active filters button -->
@@ -51,7 +60,9 @@
       </label>
     </div>
 
-    <!-- Search box for filtering tabs by title, URL, or group name -->
+    </div> <!-- End collapsible controls section -->
+
+    <!-- Search box for filtering tabs by title, URL, or group name (always visible) -->
     <input type="text" id="searchBox" class="search-box" placeholder="Search tabs and groups...">
 
     <!-- Main container where tabs and groups are rendered dynamically -->

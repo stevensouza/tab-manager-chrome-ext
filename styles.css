@@ -15,7 +15,9 @@
  */
 
 body {
-  width: 350px;  /* Fixed width for extension popup */
+  width: 550px;  /* Wider for better tab title visibility */
+  min-width: 550px;
+  max-width: 550px;
   margin: 0;
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -62,6 +64,19 @@ h1 {
 .total {
   margin: 0 0 12px 0;
   color: #666;
+}
+
+/* Compact stats line - single line for tab/group counts */
+.stats-line {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 12px 0;
+  text-align: center;
+}
+
+.stats-line span {
+  color: #1A73E8;
+  font-weight: 600;
 }
 
 #tabCount {
@@ -241,6 +256,57 @@ h1 {
 
 /*
  * ============================================================================
+ * COLLAPSIBLE CONTROLS
+ * ============================================================================
+ * Toggle button and collapsible section for filters/sort options
+ */
+
+/* Toggle button for collapsible controls */
+.toggle-controls-btn {
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  transition: background 0.2s;
+}
+
+.toggle-controls-btn:hover {
+  background: #e8e8e8;
+}
+
+.toggle-controls-btn .caret {
+  transition: transform 0.2s;
+  font-size: 10px;
+}
+
+.toggle-controls-btn.expanded .caret {
+  transform: rotate(-180deg);
+}
+
+/* Collapsible controls section */
+.controls-section {
+  max-height: 500px;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+  opacity: 1;
+}
+
+.controls-section.collapsed {
+  max-height: 0;
+  opacity: 0;
+}
+
+/*
+ * ============================================================================
  * TAB LIST CONTAINER
  * ============================================================================
  */
@@ -395,6 +461,23 @@ h1 {
   border-radius: 10px;  /* Rounded pill shape */
   font-size: 10px;
   font-weight: 600;
+}
+
+/* Visit count badge - Shows total visits from browser history */
+.visit-badge {
+  flex-shrink: 0;  /* Don't shrink */
+  padding: 2px 6px;
+  background: #1A73E8;  /* Blue to differentiate from orange duplicates */
+  color: white;
+  border-radius: 10px;  /* Rounded pill shape */
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+/* Tighter spacing when badges stack */
+.duplicate-badge + .visit-badge {
+  margin-left: 4px;
 }
 
 /* Group badge - Shows group name when globally sorted */

@@ -40,7 +40,7 @@ This Chrome extension helps you manage browser tabs with features like search, f
 - **Mute/Unmute tabs** - Click 🔇/🔊/🔈 button to toggle audio without switching tabs
 
 ### 🔄 Sorting
-- **7 sort options** - Title (A→Z, Z→A), URL (A→Z, Z→A), Age (Newest/Oldest), Default (by group)
+- **9 sort options** - Title (A→Z, Z→A), URL (A→Z, Z→A), Age (Newest/Oldest), Most/Least Visited, Default (by group)
 - **Per-group sorting** - Sort tabs within each group (default)
 - **Global sorting** - Optional checkbox to sort all tabs together across groups
   - Shows group badges when globally sorted
@@ -59,6 +59,12 @@ This Chrome extension helps you manage browser tabs with features like search, f
 - **Smart filtering** - Filter to show only tabs with duplicates
 - **Filter-aware closing** - Close duplicates only from current view/filters
 
+### 📊 Visit History
+- **Visit count badges** - Shows total visits from browser history (blue badge)
+- **Most Visited sort** - Sort tabs by frequency of visits
+- **Least Visited sort** - Find rarely-used tabs for cleanup
+- **Smart thresholds** - Only shows badges for 10+ visits to reduce clutter
+
 ### 🎨 Visual Features
 - **Favicons** - Website icons displayed next to tab names
 - **Color-coded groups** - Matches Chrome's tab group colors (blue, red, yellow, green, pink, purple, cyan, orange, grey)
@@ -72,47 +78,69 @@ This Chrome extension helps you manage browser tabs with features like search, f
 
 ## UI Preview
 
-### Default View (No Filters)
+### Default View (Controls Collapsed)
 ```
-┌─────────────────────────────────────────┐
-│ Tab Manager                        ℹ️   │
-│ by Steve Souza & Claude Code (01/26)    │
-│                                         │
-│ Total tab groups: 3                     │
-│ Total tabs: 12                          │
-│                                         │
-│ [Show Only Duplicates] [Close Dupes]   │
-│ [Sort: Default (by group)▼][Clear]     │ ← Sort dropdown + Clear Filters
-│ ┌─────────────────────────────────────┐ │
-│ │ Search tabs and groups...           │ │
-│ └─────────────────────────────────────┘ │
-│                                         │
-│ ┌───────────────────────────────────┐   │
-│ │ 🔵 Work (5)                    [×]│   │ ← Group header (blue)
-│ └───────────────────────────────────┘   │
-│  🌐📌🔈 GitHub - Pull Requests     [×]   │ ← Pinned tab (green border=recent)
-│  📧 Gmail - Inbox          [2×] 🔇  [×]  │ ← Muted duplicate (yellow=hours)
-│  📊 Google Sheets - Q1 Data       [×]   │ ← Active tab (blue border)
-│  📧 Gmail - Inbox          [2×]     [×]  │ ← Duplicate (orange=days)
-│  📝 Notion - Projects              [×]  │
-│                                         │
-│ ┌───────────────────────────────────┐   │
-│ │ 🟢 Research (4)                [×]│   │ ← Group header (green)
-│ └───────────────────────────────────┘   │
-│  📄 Wikipedia - React              [×]  │
-│  🔍 Stack Overflow - Async    [3×] [×]  │
-│  📰 Medium - Web Dev               [×]  │
-│  🔍 Stack Overflow - Async    [3×] [×]  │
-│                                         │
-│ ┌───────────────────────────────────┐   │
-│ │ Ungrouped Tabs (3)                │   │
-│ └───────────────────────────────────┘   │
-│  🎵🔊 YouTube - Music              [×]  │ ← Playing audio
-│  🛒 Amazon - Cart             [2×] [×]  │
-│  🛒 Amazon - Cart             [2×] [×]  │
-│                                         │
-│ Created by Steve Souza | Experimental   │
-└─────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────┐
+│ Tab Manager                                          ℹ️   │
+│ by Steve Souza & Claude Code (01/26)                      │
+│                                                           │
+│ Total groups: 3 | Total tabs: 12                         │
+│                                                           │
+│ [▼ Filters & Sort                                      ]  │ ← Click to expand
+│ ┌───────────────────────────────────────────────────────┐ │
+│ │ Search tabs and groups...                             │ │
+│ └───────────────────────────────────────────────────────┘ │
+│                                                           │
+│ ┌─────────────────────────────────────────────────────┐   │
+│ │ 🔵 Work (5)                                      [×]│   │ ← Group header
+│ └─────────────────────────────────────────────────────┘   │
+│  🌐📌🔈 GitHub - Pull Requests            [42]        [×]  │ ← 42 visits
+│  📧 Gmail - Inbox                   [2×] [89] 🔇     [×]  │ ← Dup + 89 visits
+│  📊 Google Sheets - Q1 Data              [156]       [×]  │ ← Active, 156 visits
+│  📧 Gmail - Inbox                   [2×] [89]        [×]  │
+│  📝 Notion - Projects                                [×]  │
+│                                                           │
+│ ┌─────────────────────────────────────────────────────┐   │
+│ │ 🟢 Research (4)                                  [×]│   │ ← Group header
+│ └─────────────────────────────────────────────────────┘   │
+│  📄 Wikipedia - React                                [×]  │
+│  🔍 Stack Overflow - Async Questions     [3×]        [×]  │
+│  📰 Medium - Web Development                         [×]  │
+│  🔍 Stack Overflow - Async Questions     [3×]        [×]  │
+│                                                           │
+│ ┌─────────────────────────────────────────────────────┐   │
+│ │ Ungrouped Tabs (3)                                  │   │
+│ └─────────────────────────────────────────────────────┘   │
+│  🎵🔊 YouTube - Music                                 [×]  │ ← Playing audio
+│  🛒 Amazon - Shopping Cart               [2×]        [×]  │
+│  🛒 Amazon - Shopping Cart               [2×]        [×]  │
+│                                                           │
+│ Created by Steve Souza | Experimental Project             │
+└───────────────────────────────────────────────────────────┘
+```
+
+### With Controls Expanded
+```
+┌───────────────────────────────────────────────────────────┐
+│ Tab Manager                                          ℹ️   │
+│ by Steve Souza & Claude Code (01/26)                      │
+│                                                           │
+│ Total groups: 3 | Total tabs: 12                         │
+│                                                           │
+│ [▲ Filters & Sort                                      ]  │ ← Click to collapse
+│                                                           │
+│ [Show Only Duplicates] [Close Duplicates]                │
+│ [Sort: Most Visited First ▼]      [Clear Filters]        │
+│ ☑ Sort globally (across all groups)                      │
+│                                                           │
+│ ┌───────────────────────────────────────────────────────┐ │
+│ │ Search tabs and groups...                             │ │
+│ └───────────────────────────────────────────────────────┘ │
+│                                                           │
+│ [Tab list appears here...]                               │
+│                                                           │
+│ Created by Steve Souza | Experimental Project             │
+└───────────────────────────────────────────────────────────┘
 ```
 
 ### With Sort by Title (A→Z) - Per-Group Mode
@@ -194,10 +222,13 @@ This Chrome extension helps you manage browser tabs with features like search, f
 ```
 
 ### Legend
+- [▼ Filters & Sort] - Toggle button (click to show/hide controls)
+- [▲ Filters & Sort] - Controls expanded (click to collapse)
 - 🔵🟢🔴🟡 - Group color indicators (badges in global sort mode)
 - 🔘No Group - Ungrouped tab badge (gray, appears in global sort mode)
 - [×] - Close button (appears on hover)
-- [2×][3×] - Duplicate count badge (orange)
+- [2×][3×] - Duplicate count badge (orange, current tabs only)
+- [42][156] - Visit count badge (blue, total visits from browser history)
 - 📌 - Pinned tab indicator (clickable toggle)
 - 🔇 - Muted tab (clickable toggle)
 - 🔊 - Playing audio (clickable to mute)
@@ -283,8 +314,9 @@ Click group header again to clear group filter.
 ## Permissions
 
 **Required permissions:**
-- **Read your browsing history** (`tabs`) - To access tab titles, URLs, and metadata
+- **Read tab information** (`tabs`) - To access tab titles, URLs, and metadata
 - **View and manage your tab groups** (`tabGroups`) - To read and display tab group information
+- **Read your browsing history** (`history`) - To show visit counts from browser history (data never leaves your browser)
 
 **No website content access** - Extension does not read or modify webpage content.
 
@@ -328,6 +360,19 @@ tab-manager-chrome-ext/
 - Can be removed at any time
 
 ## Changelog
+
+**Version 2.1 (2025-01-27)**
+- ✨ **NEW:** Visit count badges showing total visits from browser history
+- ✨ **NEW:** "Most Visited First" sort option
+- ✨ **NEW:** "Least Visited First" sort option (find tabs to close)
+- ✨ **NEW:** Collapsible controls - hide/show filters & sort with toggle button
+- ✨ **NEW:** Wider popup (550px) - more space for tab titles
+- 🔒 **NEW:** Added "history" permission to read visit counts
+- 📊 Visit badges only show for tabs with 10+ visits (reduces clutter)
+- 🎨 Blue visit badges visually distinct from orange duplicate badges
+- 🎨 Compact stats - tab/group counts on single line
+- 💾 Collapsible state persists via localStorage
+- ⚡ Search box always visible with auto-focus
 
 **Version 2.0 (2025-01-26)**
 - ✨ **NEW:** Interactive pin/unpin toggle buttons (📌/📍)

@@ -31,6 +31,10 @@ let activeTabId = null;
 // Example: { "https://github.com": 3, "https://gmail.com": 2 }
 let urlCounts = {};
 
+// Map of URL -> visit count from browser history
+// Example: { "https://github.com": 42, "https://gmail.com": 156 }
+let visitCounts = {};
+
 // Current search term from the search box
 let currentSearchTerm = '';
 
@@ -44,6 +48,9 @@ let currentSortOption = 'default';
 // Whether to sort globally (across all groups) or within each group
 // Only applies when currentSortOption is not 'default'
 let globalSortEnabled = false;
+
+// Collapsed state for filter/sort controls section (persisted in localStorage)
+let controlsCollapsed = localStorage.getItem('controlsCollapsed') === 'true';
 
 /*
  * ============================================================================
@@ -112,6 +119,43 @@ function buildDuplicateMap(tabs) {
 }
 
 /**
+ * Builds a map of URL → total visit count from Chrome history.
+ * Called once per loadTabs() to minimize API overhead.
+ * Handles missing permissions/failed queries gracefully (defaults to 0).
+ *
+ * @param {Array} tabs - Array of tabs to get visit counts for
+ * @returns {Object} Map of URL -> visit count
+ */
+async function buildVisitCountsMap(tabs) {
+  const visitCounts = {};
+
+  // Check if history API available (may be denied permission)
+  if (!chrome.history || !chrome.history.getVisits) {
+    console.warn('History API not available - visit counts disabled');
+    return visitCounts;
+  }
+
+  // Get unique URLs to minimize API calls
+  const uniqueUrls = [...new Set(tabs.map(tab => tab.url))];
+
+  // Fetch visit counts for each unique URL
+  const promises = uniqueUrls.map(async (url) => {
+    try {
+      const visits = await chrome.history.getVisits({ url });
+      visitCounts[url] = visits ? visits.length : 0;
+    } catch (error) {
+      console.warn(`Failed to get visits for ${url}:`, error);
+      visitCounts[url] = 0; // Default to 0 on error
+    }
+  });
+
+  // Wait for all history queries to complete
+  await Promise.all(promises);
+
+  return visitCounts;
+}
+
+/**
  * Sorts an array of tabs based on the current sort option.
  *
  * Sort options:
@@ -157,6 +201,22 @@ function sortTabs(tabs) {
         const timeA = a.lastAccessed || 0;
         const timeB = b.lastAccessed || 0;
         return timeA - timeB; // Ascending
+      });
+
+    case 'most-visited':
+      // Most visited first (highest visit count)
+      return sorted.sort((a, b) => {
+        const visitsA = visitCounts[a.url] || 0;
+        const visitsB = visitCounts[b.url] || 0;
+        return visitsB - visitsA; // Descending
+      });
+
+    case 'least-visited':
+      // Least visited first (lowest visit count)
+      return sorted.sort((a, b) => {
+        const visitsA = visitCounts[a.url] || 0;
+        const visitsB = visitCounts[b.url] || 0;
+        return visitsA - visitsB; // Ascending
       });
 
     default:
@@ -673,6 +733,16 @@ function createTabElement(tab, groupColor = null, groupTitle = null) {
     tabItem.appendChild(dupBadge);
   }
 
+  // Visit count badge - Shows total visits from browser history (≥10 visits)
+  const visitCount = visitCounts[tab.url] || 0;
+  if (visitCount >= 10) {
+    const visitBadge = document.createElement('span');
+    visitBadge.className = 'visit-badge';
+    visitBadge.textContent = `${visitCount}`;
+    visitBadge.title = `${visitCount} visit${visitCount === 1 ? '' : 's'}`;
+    tabItem.appendChild(visitBadge);
+  }
+
   // Close button (hidden by default, appears on hover)
   const closeBtn = document.createElement('button');
   closeBtn.className = 'close-btn';
@@ -888,6 +958,9 @@ async function loadTabs() {
   // Build duplicate detection map
   urlCounts = buildDuplicateMap(allTabs);
 
+  // Build visit counts map from browser history
+  visitCounts = await buildVisitCountsMap(allTabs);
+
   // Update count displays
   document.getElementById('tabCount').textContent = allTabs.length;
   document.getElementById('groupCount').textContent = allGroups.length;
@@ -899,6 +972,26 @@ async function loadTabs() {
 
   // Render the UI
   renderTabs(currentSearchTerm);
+}
+
+/**
+ * Toggle the visibility of filter/sort controls section.
+ * State is persisted in localStorage so it remembers user preference.
+ */
+function toggleControls() {
+  controlsCollapsed = !controlsCollapsed;
+  localStorage.setItem('controlsCollapsed', controlsCollapsed);
+
+  const section = document.getElementById('controlsSection');
+  const button = document.getElementById('toggleControls');
+
+  if (controlsCollapsed) {
+    section.classList.add('collapsed');
+    button.classList.remove('expanded');
+  } else {
+    section.classList.remove('collapsed');
+    button.classList.add('expanded');
+  }
 }
 
 /*
@@ -940,6 +1033,21 @@ document.addEventListener('DOMContentLoaded', () => {
   if (currentSortOption !== 'default') {
     globalSortContainer.style.display = 'block';
   }
+
+  // Initialize collapsible controls state
+  const section = document.getElementById('controlsSection');
+  const button = document.getElementById('toggleControls');
+
+  if (controlsCollapsed) {
+    section.classList.add('collapsed');
+    button.classList.remove('expanded');
+  } else {
+    section.classList.remove('collapsed');
+    button.classList.add('expanded');
+  }
+
+  // Add toggle listener for collapsible controls
+  button.addEventListener('click', toggleControls);
 
   // Load and display all tabs
   loadTabs();
