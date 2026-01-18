@@ -40,12 +40,23 @@ This Chrome extension helps you manage browser tabs with features like search, f
 - **Mute/Unmute tabs** - Click 🔇/🔊/🔈 button to toggle audio without switching tabs
 
 ### 🔄 Sorting
-- **9 sort options** - Title (A→Z, Z→A), URL (A→Z, Z→A), Age (Newest/Oldest), Most/Least Visited, Default (by group)
-- **Per-group sorting** - Sort tabs within each group (default)
-- **Global sorting** - Optional checkbox to sort all tabs together across groups
+- **10 sort options** - Groups (A→Z) + Recent First (default), Browser Tab Order, Title (A→Z, Z→A), URL (A→Z, Z→A), Age (Newest/Oldest), Most/Least Visited
+- **Smart default** - Groups alphabetically, tabs by most recent first within each group
+- **Per-group sorting** - Sort tabs within each group (default for most modes)
+- **Global sorting** - Optional checkbox to sort all tabs together across groups (disabled for default modes)
   - Shows group badges when globally sorted
   - Persists sort preference across sessions
 - **Persistent preferences** - Remembers your sort choice and global sort setting
+
+### ↶ Recently Closed Tabs
+- **Session history** - Track last 25 closed tabs with Chrome sessions API
+- **Group restoration** - Tabs restore to their original group if it still exists
+- **Group badges** - Colored badges show which group the tab will restore to
+- **Toggle visibility** - Show/hide recently closed section with button
+- **Click to restore** - Click any closed tab or restore button (↶) to reopen
+- **Search integration** - Search works on closed tabs (filter by title/URL)
+- **Smart fallback** - If original group deleted, tab opens ungrouped
+- **Always last** - Recently closed section appears after all groups and ungrouped tabs
 
 ### ❌ Close Operations
 - **Individual tab close** - Hover over any tab to see close button
@@ -115,6 +126,13 @@ This Chrome extension helps you manage browser tabs with features like search, f
 │  🛒 Amazon - Shopping Cart               [2×]        [×]  │
 │  🛒 Amazon - Shopping Cart               [2×]        [×]  │
 │                                                           │
+│ ┌─────────────────────────────────────────────────────┐   │
+│ │ Recently Closed (3)                                 │   │
+│ └─────────────────────────────────────────────────────┘   │
+│  📰 CNN News Article          🔵Work    5m ago       [↶]  │ ← Closed from Work
+│  🔍 Stack Overflow Question              2h ago      [↶]  │ ← Was ungrouped
+│  📧 Gmail - Old Email         🟢Research 1d ago      [↶]  │ ← Closed from Research
+│                                                           │
 │ Created by Steve Souza | Experimental Project             │
 └───────────────────────────────────────────────────────────┘
 ```
@@ -130,6 +148,7 @@ This Chrome extension helps you manage browser tabs with features like search, f
 │ [▲ Filters & Sort                                      ]  │ ← Click to collapse
 │                                                           │
 │ [Show Only Duplicates] [Close Duplicates]                │
+│ [Show Recently Closed (3)]                               │
 │ [Sort: Most Visited First ▼]      [Clear Filters]        │
 │ ☑ Sort globally (across all groups)                      │
 │                                                           │
@@ -224,11 +243,13 @@ This Chrome extension helps you manage browser tabs with features like search, f
 ### Legend
 - [▼ Filters & Sort] - Toggle button (click to show/hide controls)
 - [▲ Filters & Sort] - Controls expanded (click to collapse)
-- 🔵🟢🔴🟡 - Group color indicators (badges in global sort mode)
+- 🔵🟢🔴🟡 - Group color badges (in recently closed and global sort mode)
 - 🔘No Group - Ungrouped tab badge (gray, appears in global sort mode)
-- [×] - Close button (appears on hover)
+- [×] - Close button (appears on hover for open tabs)
+- [↶] - Restore button (always visible for closed tabs)
 - [2×][3×] - Duplicate count badge (orange, current tabs only)
 - [42][156] - Visit count badge (blue, total visits from browser history)
+- 5m ago, 2h ago, 1d ago - Time since tab was closed (recently closed section)
 - 📌 - Pinned tab indicator (clickable toggle)
 - 🔇 - Muted tab (clickable toggle)
 - 🔊 - Playing audio (clickable to mute)
@@ -238,6 +259,7 @@ This Chrome extension helps you manage browser tabs with features like search, f
 - 🟡 Yellow border - Accessed hours ago (≤24 hours)
 - 🟠 Orange border - Days old (≤1 week)
 - 🔴 Red border - Very old (>1 week)
+- Grayed out tab - Recently closed tab (not currently open)
 - Favicon emojis - Website icons (🌐📧📊🔍📄📰🎵🛒)
 - ℹ️ - Info icon (hover to see age color legend)
 
@@ -311,12 +333,34 @@ Filters work together (AND logic):
 
 Click group header again to clear group filter.
 
+### Recently Closed Tabs
+
+**View Recently Closed:**
+1. Click "Filters & Sort" to expand controls
+2. Click "Show Recently Closed (X)" button to toggle visibility
+3. Recently Closed section appears at bottom (after ungrouped tabs)
+
+**Restore Tabs:**
+- Click any closed tab to restore it
+- Click the restore button (↶) on the right
+- Tab opens in original group if group still exists
+- If group was deleted, tab opens ungrouped
+
+**Features:**
+- Colored badges show which group tab will restore to
+- Time badges show when tab was closed (5m ago, 2h ago, etc.)
+- Search works on closed tabs (filter by title or URL)
+- Tracks last 25 closed tabs (Chrome API limit)
+- Toggle state persists (stays on/off across sessions)
+
 ## Permissions
 
 **Required permissions:**
 - **Read tab information** (`tabs`) - To access tab titles, URLs, and metadata
 - **View and manage your tab groups** (`tabGroups`) - To read and display tab group information
 - **Read your browsing history** (`history`) - To show visit counts from browser history (data never leaves your browser)
+- **Access recently closed tabs** (`sessions`) - To track and restore recently closed tabs
+- **Store group metadata** (`storage`) - To save which group closed tabs belonged to (local storage only)
 
 **No website content access** - Extension does not read or modify webpage content.
 
@@ -325,21 +369,23 @@ Click group header again to clear group filter.
 ```
 tab-manager-chrome-ext/
 ├── manifest.json       # Extension configuration
-├── background.js       # Badge counter (shows tab count)
+├── background.js       # Badge counter + group metadata tracking for closed tabs
 ├── popup.html          # Popup UI structure
-├── popup.js            # Main logic (search, filter, sort, duplicates)
-├── styles.css          # Styling (includes interactive buttons, age colors)
+├── popup.js            # Main logic (search, filter, sort, duplicates, recently closed)
+├── styles.css          # Styling (includes interactive buttons, age colors, closed tabs)
 ├── icons/              # Extension icons (16, 32, 48, 128px)
+├── CLAUDE.md           # Development guide for Claude Code
 └── README.md           # This file
 ```
 
 ## Technical Details
 
 - **Manifest Version:** 3 (latest Chrome extension standard)
-- **Permissions:** `tabs`, `tabGroups` only
+- **Permissions:** `tabs`, `tabGroups`, `history`, `sessions`, `storage`
 - **No external dependencies**
 - **Pure JavaScript** (no frameworks)
-- **Service Worker** for background badge updates
+- **Service Worker** for background badge updates + group metadata tracking
+- **Chrome APIs:** `chrome.tabs`, `chrome.tabGroups`, `chrome.sessions`, `chrome.storage.local`, `chrome.history`, `chrome.action`, `chrome.windows`
 
 ## Known Limitations
 
@@ -352,14 +398,37 @@ tab-manager-chrome-ext/
 **Built with:**
 - Chrome Extensions Manifest V3
 - Vanilla JavaScript
-- Chrome APIs: `chrome.tabs`, `chrome.tabGroups`, `chrome.action`, `chrome.windows`
+- Chrome APIs: `chrome.tabs`, `chrome.tabGroups`, `chrome.sessions`, `chrome.storage.local`, `chrome.history`, `chrome.action`, `chrome.windows`
+
+**Key Implementation Details:**
+- Background service worker tracks group metadata for closed tabs
+- Group info stored in `chrome.storage.local` (sessions API doesn't include groups)
+- Timestamp matching algorithm pairs session data with group metadata
+- Smart caching prevents group info loss during tab close sequence
 
 **Code comments indicate:**
-- Created by Steve Souza
+- Created by Steve Souza with Claude Code
 - Experimental learning project
 - Can be removed at any time
 
 ## Changelog
+
+**Version 2.2 (2025-01-27)**
+- ✨ **NEW:** Recently Closed Tabs feature - track and restore last 25 closed tabs
+- ✨ **NEW:** Group restoration - closed tabs restore to their original group
+- ✨ **NEW:** Colored group badges on closed tabs showing restoration target
+- ✨ **NEW:** Enhanced default sorting - Groups (A→Z) + Recent First
+- ✨ **NEW:** Click entire closed tab row or restore button (↶) to reopen
+- 🔒 **NEW:** Added "sessions" permission to access recently closed tabs
+- 🔒 **NEW:** Added "storage" permission to save group metadata for closed tabs
+- 🎨 Grayed out styling for closed tabs distinguishes from open tabs
+- 🎨 Time badges show when tab was closed (5m ago, 2h ago, 1d ago)
+- 💾 Toggle state for recently closed section persists via localStorage
+- ⚡ Search filter works on recently closed tabs
+- 🛡️ Smart fallback: if group deleted, tab opens ungrouped
+- 📍 Recently Closed section always appears LAST (after ungrouped tabs)
+- 🔧 Groups now sorted alphabetically by default for easier navigation
+- 🔧 Within groups, tabs sorted by most recent first (intuitive default)
 
 **Version 2.1 (2025-01-27)**
 - ✨ **NEW:** Visit count badges showing total visits from browser history

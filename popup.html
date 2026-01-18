@@ -31,13 +31,19 @@
 
       <!-- Button to close all duplicate tabs (keeps one of each URL) -->
       <button id="closeDuplicatesBtn" class="close-duplicates-btn">Close Duplicates</button>
+
+      <!-- Toggle button to show/hide recently closed tabs -->
+      <button id="closedTabsToggle" class="closed-tabs-toggle">
+        Show Recently Closed (<span id="closedTabsCount">0</span>)
+      </button>
     </div>
 
     <!-- Sort and filter controls -->
     <div class="sort-filter-controls">
       <!-- Sort dropdown to organize tabs -->
       <select id="sortDropdown" class="sort-dropdown">
-        <option value="default">Sort: Default (by group)</option>
+        <option value="group-recent">Sort: Groups (A→Z) + Recent First (Default)</option>
+        <option value="default">Sort: Browser Tab Order</option>
         <option value="title-asc">Sort: Title (A→Z)</option>
         <option value="title-desc">Sort: Title (Z→A)</option>
         <option value="url-asc">Sort: URL (A→Z)</option>

@@ -42,12 +42,20 @@ let currentSearchTerm = '';
 let duplicateFilterActive = false;
 
 // Current sort option (persisted in localStorage)
-// Options: 'default', 'title-asc', 'title-desc', 'url-asc', 'url-desc', 'age-newest', 'age-oldest'
-let currentSortOption = 'default';
+// Options: 'group-recent', 'default', 'title-asc', 'title-desc', 'url-asc', 'url-desc', 'age-newest', 'age-oldest'
+// Default is 'group-recent' (groups A→Z, tabs by recent first)
+let currentSortOption = 'group-recent';
 
 // Whether to sort globally (across all groups) or within each group
 // Only applies when currentSortOption is not 'default'
 let globalSortEnabled = false;
+
+// Recently closed tabs state
+// Loaded from chrome.sessions API + group metadata from chrome.storage
+let recentlyClosedTabs = [];
+
+// Toggle state for showing/hiding recently closed tabs (persisted in localStorage)
+let closedTabsVisible = localStorage.getItem('closedTabsVisible') === 'true';
 
 // Collapsed state for filter/sort controls section (persisted in localStorage)
 let controlsCollapsed = localStorage.getItem('controlsCollapsed') === 'true';
@@ -219,6 +227,15 @@ function sortTabs(tabs) {
         return visitsA - visitsB; // Ascending
       });
 
+    case 'group-recent':
+      // Sort by last accessed time (most recent first = descending)
+      // Groups are sorted alphabetically in renderTabs()
+      return sorted.sort((a, b) => {
+        const timeA = a.lastAccessed || 0;
+        const timeB = b.lastAccessed || 0;
+        return timeB - timeA;  // Descending (most recent first)
+      });
+
     default:
       return tabs;
   }
@@ -358,6 +375,98 @@ async function activateTab(tabId, windowId) {
 }
 
 /**
+ * Restores a recently closed tab using Chrome sessions API.
+ *
+ * Restoration flow:
+ * 1. Try chrome.sessions.restore(sessionId) first (preserves more state)
+ * 2. If tab had group info, check if original group still exists
+ * 3. If group exists, add restored tab to that group
+ * 4. If group deleted, tab stays ungrouped (graceful degradation)
+ * 5. If session expired, fallback to creating new tab with URL
+ *
+ * IMPORTANT: event.stopPropagation() prevents click event bubbling.
+ *
+ * @param {Object} closedTab - Closed tab object with sessionId, url, groupInfo
+ * @param {Event} event - Click event from restore button or row
+ */
+async function restoreClosedTab(closedTab, event) {
+  event.stopPropagation();
+  event.preventDefault();
+
+  // Check if original group still exists (if tab was in a group)
+  let groupExists = false;
+  if (closedTab.groupInfo) {
+    try {
+      await chrome.tabGroups.get(closedTab.groupInfo.groupId);
+      groupExists = true;
+    } catch (error) {
+      // Group doesn't exist anymore
+      groupExists = false;
+    }
+  }
+
+  // IMPORTANT: If group doesn't exist, don't use sessions.restore()
+  // because it might recreate the entire group with all tabs.
+  // Instead, create a new tab with just the URL.
+  if (closedTab.groupInfo && !groupExists) {
+    try {
+      // Create new tab without using sessions API
+      await chrome.tabs.create({ url: closedTab.url, active: true });
+      await loadTabs();
+      return;
+    } catch (error) {
+      console.error('Failed to restore tab as new tab:', error);
+      alert('Failed to restore tab');
+      return;
+    }
+  }
+
+  // Group exists (or tab was ungrouped), safe to use sessions.restore()
+  try {
+    const session = await chrome.sessions.restore(closedTab.sessionId);
+
+    // If tab had group info and group exists, add to that group
+    if (closedTab.groupInfo && groupExists && session && session.tab) {
+      const restoredTabId = session.tab.id;
+      try {
+        await chrome.tabs.group({
+          tabIds: [restoredTabId],
+          groupId: closedTab.groupInfo.groupId
+        });
+      } catch (groupError) {
+        console.error('Failed to add restored tab to group:', groupError);
+      }
+    }
+
+    await loadTabs();
+  } catch (error) {
+    console.error('Failed to restore tab via sessions API:', error);
+
+    // Fallback: Create new tab with URL
+    try {
+      const newTab = await chrome.tabs.create({ url: closedTab.url, active: true });
+
+      // Try to restore to group if info exists and group exists
+      if (closedTab.groupInfo && groupExists && newTab) {
+        try {
+          await chrome.tabs.group({
+            tabIds: [newTab.id],
+            groupId: closedTab.groupInfo.groupId
+          });
+        } catch (groupError) {
+          console.error('Failed to add new tab to group:', groupError);
+        }
+      }
+
+      await loadTabs();
+    } catch (fallbackError) {
+      console.error('Fallback restoration also failed:', fallbackError);
+      alert('Failed to restore tab');
+    }
+  }
+}
+
+/**
  * Toggles the pinned state of a tab.
  *
  * Pinned tabs:
@@ -478,8 +587,18 @@ function renderTabs(searchTerm = '') {
     }
   }
 
+  // ENHANCEMENT: Sort groups alphabetically for group-recent mode
+  if (currentSortOption === 'group-recent') {
+    organized.groups.sort((a, b) => {
+      // Sort groups by title (or color if untitled)
+      const nameA = a.title || `${a.color} group`;
+      const nameB = b.title || `${b.color} group`;
+      return nameA.localeCompare(nameB);
+    });
+  }
+
   // GLOBAL SORT MODE: Flatten all tabs and sort globally
-  if (globalSortEnabled && currentSortOption !== 'default') {
+  if (globalSortEnabled && currentSortOption !== 'default' && currentSortOption !== 'group-recent') {
     // Collect all tabs (grouped and ungrouped) that match filters
     let allFilteredTabs = [];
 
@@ -619,6 +738,69 @@ function renderTabs(searchTerm = '') {
 
     tabList.appendChild(ungroupedContainer);
   }
+
+  // Render recently closed tabs (always LAST)
+  renderRecentlyClosedTabs();
+}
+
+/**
+ * Renders recently closed tabs section.
+ * Always appears LAST (after all groups and ungrouped).
+ *
+ * Section only displays if:
+ * - closedTabsVisible is true (user toggled it on)
+ * - recentlyClosedTabs array is not empty
+ *
+ * Closed tabs respect search filter (title/URL match).
+ */
+function renderRecentlyClosedTabs() {
+  if (!closedTabsVisible || recentlyClosedTabs.length === 0) {
+    return; // Don't render if hidden or empty
+  }
+
+  const tabList = document.getElementById('tabList');
+
+  // Create container (similar to ungrouped-container)
+  const closedContainer = document.createElement('div');
+  closedContainer.className = 'closed-tabs-container';
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'closed-tabs-header';
+
+  const headerText = document.createElement('span');
+  headerText.textContent = 'Recently Closed';
+  header.appendChild(headerText);
+
+  const tabCountSpan = document.createElement('span');
+  tabCountSpan.className = 'tab-count';
+  tabCountSpan.textContent = ` (${recentlyClosedTabs.length})`;
+  header.appendChild(tabCountSpan);
+
+  closedContainer.appendChild(header);
+
+  // Apply search filter to closed tabs
+  const lowerSearch = currentSearchTerm.toLowerCase();
+  const matchesSearch = (tab) => {
+    if (!currentSearchTerm) return true;
+    const matchesTitle = tab.title.toLowerCase().includes(lowerSearch);
+    const matchesUrl = tab.url.toLowerCase().includes(lowerSearch);
+    const matchesGroup = tab.groupInfo &&
+      (tab.groupInfo.groupTitle?.toLowerCase().includes(lowerSearch) ||
+       tab.groupInfo.groupColor?.toLowerCase().includes(lowerSearch));
+    return matchesTitle || matchesUrl || matchesGroup;
+  };
+
+  const filteredClosedTabs = recentlyClosedTabs.filter(matchesSearch);
+
+  // Render each closed tab
+  filteredClosedTabs.forEach(closedTab => {
+    const tabItem = createClosedTabElement(closedTab);
+    closedContainer.appendChild(tabItem);
+  });
+
+  // Append at the END of tabList (after all groups/ungrouped)
+  tabList.appendChild(closedContainer);
 }
 
 /**
@@ -757,6 +939,78 @@ function createTabElement(tab, groupColor = null, groupTitle = null) {
       return;
     }
     activateTab(tab.id, tab.windowId);
+  });
+
+  return tabItem;
+}
+
+/**
+ * Creates a DOM element for a recently closed tab.
+ *
+ * Closed tab element contains:
+ * - Favicon (website icon, with fallback)
+ * - Title (grayed out appearance)
+ * - Time closed badge (e.g., "5m ago", "2h ago")
+ * - Restore button (↶ icon, always visible)
+ *
+ * Click entire row OR restore button to restore tab.
+ * Grayed out styling indicates tab is not currently open.
+ *
+ * @param {Object} closedTab - Closed tab object with sessionId, url, title, favIconUrl, closedAt, groupInfo
+ * @returns {HTMLElement} Closed tab element to insert into DOM
+ */
+function createClosedTabElement(closedTab) {
+  const tabItem = document.createElement('div');
+  tabItem.className = 'tab-item closed-tab';
+
+  // Tooltip shows URL and time closed
+  const timeClosed = formatTimeSince(closedTab.closedAt);
+  tabItem.title = `${closedTab.title}\n${closedTab.url}\n\nClosed: ${timeClosed}`;
+
+  // Favicon
+  const favicon = document.createElement('img');
+  favicon.className = 'favicon';
+  favicon.src = closedTab.favIconUrl || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><text y="12" font-size="12">📄</text></svg>';
+  favicon.onerror = () => {
+    favicon.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><text y="12" font-size="12">📄</text></svg>';
+  };
+  tabItem.appendChild(favicon);
+
+  // Title
+  const titleSpan = document.createElement('span');
+  titleSpan.className = 'tab-title';
+  titleSpan.textContent = closedTab.title;
+  tabItem.appendChild(titleSpan);
+
+  // Group badge - Shows which group tab will be restored to (if applicable)
+  if (closedTab.groupInfo) {
+    const groupBadge = document.createElement('span');
+    groupBadge.className = 'closed-group-badge';
+    groupBadge.setAttribute('data-group-color', closedTab.groupInfo.groupColor);
+    const groupName = closedTab.groupInfo.groupTitle || `${closedTab.groupInfo.groupColor} group`;
+    groupBadge.textContent = groupName;
+    groupBadge.title = `Will restore to: ${groupName}`;
+    tabItem.appendChild(groupBadge);
+  }
+
+  // Time closed badge
+  const timeBadge = document.createElement('span');
+  timeBadge.className = 'closed-time-badge';
+  timeBadge.textContent = timeClosed;
+  tabItem.appendChild(timeBadge);
+
+  // Restore button (↶ icon, always visible)
+  const restoreBtn = document.createElement('button');
+  restoreBtn.className = 'restore-btn';
+  restoreBtn.textContent = '↶';
+  restoreBtn.title = 'Restore tab';
+  restoreBtn.addEventListener('click', (e) => restoreClosedTab(closedTab, e));
+  tabItem.appendChild(restoreBtn);
+
+  // Click to restore (entire row)
+  tabItem.addEventListener('click', (e) => {
+    if (e.target === restoreBtn) return;
+    restoreClosedTab(closedTab, e);
   });
 
   return tabItem;
@@ -929,6 +1183,75 @@ async function closeDuplicateTabs() {
  */
 
 /**
+ * Loads recently closed tabs from Chrome sessions API.
+ * Merges with stored group metadata from background.js.
+ *
+ * Chrome APIs used:
+ * - chrome.sessions.getRecentlyClosed() - Get closed tabs/windows from session history
+ * - chrome.storage.local.get() - Retrieve group metadata stored by background.js
+ *
+ * Returns array of closed tab objects with:
+ * - sessionId: For restoration via chrome.sessions.restore()
+ * - url, title, favIconUrl: Tab details
+ * - closedAt: Timestamp when tab was closed
+ * - groupInfo: {groupId, groupTitle, groupColor} if tab was in a group, null otherwise
+ */
+async function loadRecentlyClosedTabs() {
+  try {
+    const sessions = await chrome.sessions.getRecentlyClosed({ maxResults: 25 });
+
+    // Load group metadata from storage
+    const stored = await chrome.storage.local.get('closedTabGroups');
+    const groupMetadata = stored.closedTabGroups || {};
+
+    // Filter to only tabs (exclude windows)
+    recentlyClosedTabs = sessions
+      .filter(session => session.tab)
+      .map(session => {
+        const url = session.tab.url;
+        // Chrome sessions API returns lastModified in seconds, not milliseconds
+        // Convert to milliseconds for consistency with Date.now()
+        const closedAt = session.lastModified * 1000;
+
+        // Find matching group metadata (closest timestamp match)
+        let groupInfo = null;
+        let closestMatch = null;
+        let closestTimeDiff = Infinity;
+
+        for (const [key, metadata] of Object.entries(groupMetadata)) {
+          if (metadata.url === url) {
+            const timeDiff = Math.abs(metadata.closedAt - closedAt);
+            if (timeDiff < closestTimeDiff && timeDiff < 5000) { // Within 5 seconds
+              closestTimeDiff = timeDiff;
+              closestMatch = metadata;
+            }
+          }
+        }
+
+        if (closestMatch) {
+          groupInfo = {
+            groupId: closestMatch.groupId,
+            groupTitle: closestMatch.groupTitle,
+            groupColor: closestMatch.groupColor
+          };
+        }
+
+        return {
+          sessionId: session.tab.sessionId,  // For restoration
+          url: url,
+          title: session.tab.title || 'Untitled',
+          favIconUrl: session.tab.favIconUrl,
+          closedAt: closedAt,
+          groupInfo: groupInfo  // null if wasn't in a group
+        };
+      });
+  } catch (error) {
+    console.warn('Failed to load recently closed tabs:', error);
+    recentlyClosedTabs = [];
+  }
+}
+
+/**
  * Loads all tabs and groups from Chrome, updates UI.
  *
  * This is the main data refresh function, called:
@@ -961,9 +1284,18 @@ async function loadTabs() {
   // Build visit counts map from browser history
   visitCounts = await buildVisitCountsMap(allTabs);
 
+  // Load recently closed tabs
+  await loadRecentlyClosedTabs();
+
   // Update count displays
   document.getElementById('tabCount').textContent = allTabs.length;
   document.getElementById('groupCount').textContent = allGroups.length;
+
+  // Update closed tabs count (will be 0 if element doesn't exist yet)
+  const closedTabsCountEl = document.getElementById('closedTabsCount');
+  if (closedTabsCountEl) {
+    closedTabsCountEl.textContent = recentlyClosedTabs.length;
+  }
 
   // Enable/disable "Close Duplicates" button based on whether duplicates exist
   const hasDuplicates = Object.values(urlCounts).some(count => count > 1);
@@ -1030,7 +1362,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Show/hide global sort checkbox based on sort option
   const globalSortContainer = document.getElementById('globalSortContainer');
-  if (currentSortOption !== 'default') {
+  if (currentSortOption !== 'default' && currentSortOption !== 'group-recent') {
     globalSortContainer.style.display = 'block';
   }
 
@@ -1067,13 +1399,26 @@ document.addEventListener('DOMContentLoaded', () => {
   // "Close Duplicates" button
   document.getElementById('closeDuplicatesBtn').addEventListener('click', closeDuplicateTabs);
 
+  // Toggle recently closed tabs visibility
+  const closedTabsToggle = document.getElementById('closedTabsToggle');
+  if (closedTabsVisible) {
+    closedTabsToggle.classList.add('active');
+  }
+  closedTabsToggle.addEventListener('click', () => {
+    closedTabsVisible = !closedTabsVisible;
+    localStorage.setItem('closedTabsVisible', closedTabsVisible.toString());
+    closedTabsToggle.classList.toggle('active', closedTabsVisible);
+    renderTabs(currentSearchTerm);
+  });
+
   // Sort dropdown - Save preference, show/hide global sort checkbox, and re-render
   document.getElementById('sortDropdown').addEventListener('change', (e) => {
     currentSortOption = e.target.value;
     localStorage.setItem('tabManagerSortOption', currentSortOption);
 
     // Show/hide global sort checkbox
-    if (currentSortOption === 'default') {
+    // Hide for default and group-recent modes (designed for per-group sorting)
+    if (currentSortOption === 'default' || currentSortOption === 'group-recent') {
       globalSortContainer.style.display = 'none';
       globalSortEnabled = false;
       document.getElementById('globalSortCheckbox').checked = false;

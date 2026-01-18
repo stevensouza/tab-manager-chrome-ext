@@ -34,11 +34,21 @@ Tab Manager - A Chrome extension (Manifest V3) for managing browser tabs with gr
 
 ### File Responsibilities
 
-- **manifest.json** - Extension config, permissions (tabs, tabGroups only - NO website content access)
-- **background.js** - Service worker that updates badge with tab count (listens to tab create/remove events)
+- **manifest.json** - Extension config, permissions (tabs, tabGroups, sessions, storage, history - NO website content access)
+- **background.js** - Service worker that updates badge with tab count AND tracks group metadata for recently closed tabs
 - **popup.html** - Popup UI structure (minimal, most elements created dynamically in JS)
-- **popup.js** - Main application logic (350+ lines)
+- **popup.js** - Main application logic (1400+ lines)
 - **styles.css** - All styling including group colors matching Chrome's native groups
+
+### Permissions
+
+- **tabs** - Read tab information (title, URL, etc.)
+- **tabGroups** - Read and manage tab groups
+- **history** - Access visit counts for tabs
+- **sessions** - Access recently closed tabs via chrome.sessions API
+- **storage** - Store group metadata for closed tabs (chrome.storage.local)
+
+**NO website content access** - Extension never reads or modifies web page content.
 
 ### Core Data Flow (popup.js)
 
@@ -49,16 +59,20 @@ loadTabs()
   - Fetches allGroups (chrome.tabGroups.query)
   - Finds activeTabId (for highlighting)
   - Builds urlCounts map (for duplicate detection)
-  - Updates tab/group count displays
+  - Builds visitCounts map (from browser history)
+  - Loads recentlyClosedTabs (chrome.sessions + group metadata)
+  - Updates tab/group/closed count displays
   - Calls renderTabs()
 
 renderTabs(searchTerm)
   ↓
   - Organizes tabs by groups (organizeTabsByGroup)
+  - Sorts groups alphabetically (if group-recent mode)
   - Applies filters: search, duplicate, group (tabMatchesFilters)
   - Renders group headers with tab counts
-  - Renders tabs with favicons, badges, close buttons
-  - Uses createTabElement() for each tab
+  - Renders tabs with favicons, badges, close buttons (createTabElement)
+  - Renders ungrouped tabs
+  - Renders recently closed tabs (renderRecentlyClosedTabs) - ALWAYS LAST
 ```
 
 ### State Management (Global Variables in popup.js)
@@ -69,8 +83,12 @@ allGroups = []            // All tab groups
 activeGroupFilter = null  // Currently filtered group ID (null = show all)
 activeTabId = null        // ID of active tab (for highlighting)
 urlCounts = {}            // Map of URL → count (for duplicate detection)
+visitCounts = {}          // Map of URL → visit count (from history)
 currentSearchTerm = ''    // Current search filter text
 duplicateFilterActive = false  // "Show Only Duplicates" toggle state
+currentSortOption = 'group-recent'  // Default sort mode (v2.2+)
+recentlyClosedTabs = []   // Recently closed tabs from sessions API
+closedTabsVisible = false // Toggle state for closed tabs section
 ```
 
 ### Filter Logic - Critical Implementation Detail
@@ -228,3 +246,184 @@ Footer in popup.html:
 **Enhancement:** "Close Duplicates" button now respects all active filters using `tabMatchesFilters()` shared function.
 
 This ensures closing duplicates only affects visible/filtered tabs, not all tabs browser-wide.
+
+## Recently Closed Tabs Feature (v2.2)
+
+### Overview
+
+Track and restore the last 25 closed tabs with original group restoration.
+
+### Visual Presentation
+
+- Displayed as a special section inline with groups
+- **Always appears LAST** (after all regular groups, including ungrouped)
+- Grayed out appearance with restore icon (↶) instead of close button
+- Toggle button to show/hide section: "Show Recently Closed (X)"
+
+### Data Architecture
+
+**Two-part system:**
+
+1. **Tab data** - From `chrome.sessions.getRecentlyClosed()` API
+   - URL, title, favicon, closedAt timestamp
+   - Provided by Chrome automatically
+
+2. **Group metadata** - From background.js tracking
+   - groupId, groupTitle, groupColor
+   - Stored in `chrome.storage.local` (sessions API doesn't include groups)
+   - Background.js maintains cache of current tab states
+   - When tab closes, saves group info keyed by URL+timestamp
+
+### Background.js Group Tracking
+
+**Flow:**
+
+```javascript
+// Maintain cache of current tab → group mapping
+tabGroupCache = new Map() // tabId → {url, groupId, groupTitle, groupColor}
+
+// Update cache when tabs change
+chrome.tabs.onUpdated → update tabGroupCache
+
+// When tab closes, save to storage
+chrome.tabs.onRemoved → save groupMetadata to chrome.storage.local
+
+// On startup, initialize cache
+chrome.tabs.query → populate tabGroupCache
+```
+
+**Storage format:**
+
+```javascript
+chrome.storage.local.closedTabGroups = {
+  "https://github.com_1234567890": {
+    url: "https://github.com",
+    groupId: 42,
+    groupTitle: "Work",
+    groupColor: "blue",
+    closedAt: 1234567890
+  },
+  // ... (keeps last 100 entries to prevent unbounded growth)
+}
+```
+
+### Matching Algorithm (popup.js)
+
+When loading closed tabs, matches sessions data with group metadata:
+
+1. Get sessions from `chrome.sessions.getRecentlyClosed()`
+2. Load group metadata from `chrome.storage.local`
+3. For each closed tab:
+   - Find metadata entries with matching URL
+   - Pick closest timestamp match (within 5 seconds)
+   - Attach groupInfo if found, null otherwise
+
+### Group Restoration
+
+**When restoring a tab:**
+
+1. Try `chrome.sessions.restore(sessionId)` first
+2. If tab had `groupInfo`:
+   - Check if original group still exists (`chrome.tabGroups.get(groupId)`)
+   - If exists: add tab to that group
+   - If deleted: tab stays ungrouped (graceful degradation)
+3. If session restore fails:
+   - Fallback to `chrome.tabs.create({url})`
+   - Still attempts group restoration if info exists
+
+**Key insight:** Group restoration is best-effort, never fails restoration.
+
+### Search Integration
+
+- Closed tabs respect search filter (title/URL match)
+- Filtered dynamically in `renderRecentlyClosedTabs()`
+
+### UI Behavior
+
+- Click tab row OR restore button (↶) to restore
+- Grayed out styling indicates tab is not currently open
+- Time badge shows "5m ago", "2h ago", "3d ago", etc.
+- Toggle button state persisted in localStorage
+
+### Limitations
+
+- Chrome sessions API limit: 25 tabs (enforced by Chrome API)
+- Group metadata storage limit: 100 entries (auto-prunes oldest)
+- Timestamp matching tolerance: 5 seconds (handles async timing)
+- Incognito tabs excluded automatically by Chrome
+
+## Enhanced Default Sorting (v2.2)
+
+### New Default: Group-Recent Mode
+
+**Behavior:**
+
+- **Groups:** Sorted alphabetically by title (A→Z)
+  - Unnamed groups use color name ("blue group", "red group", etc.)
+- **Within each group:** Tabs sorted by `lastAccessed` (most recent first = descending)
+- **Special positions:**
+  - Ungrouped tabs: After all named groups
+  - Recently Closed: Always LAST
+
+### Implementation
+
+**Group sorting (renderTabs):**
+
+```javascript
+if (currentSortOption === 'group-recent') {
+  organized.groups.sort((a, b) => {
+    const nameA = a.title || `${a.color} group`;
+    const nameB = b.title || `${b.color} group`;
+    return nameA.localeCompare(nameB);
+  });
+}
+```
+
+**Tab sorting (sortTabs):**
+
+```javascript
+case 'group-recent':
+  return sorted.sort((a, b) => {
+    const timeA = a.lastAccessed || 0;
+    const timeB = b.lastAccessed || 0;
+    return timeB - timeA;  // Descending (most recent first)
+  });
+```
+
+### Why This Is Better
+
+- **Intuitive:** Most recently used tabs at top of each group
+- **Organized:** Groups alphabetically for easy navigation
+- **Consistent:** Predictable ordering vs. random browser tab order
+
+### Global Sort Disabled
+
+Group-recent mode is designed for **per-group sorting only**.
+
+Global sort checkbox is hidden when:
+- `currentSortOption === 'default'` (browser tab order)
+- `currentSortOption === 'group-recent'` (NEW)
+
+This prevents user confusion about incompatible modes.
+
+### Dropdown Options
+
+```html
+<option value="group-recent">Sort: Groups (A→Z) + Recent First (Default)</option>
+<option value="default">Sort: Browser Tab Order</option>
+<!-- Other sort options... -->
+```
+
+### Backward Compatibility
+
+Users with saved `localStorage.getItem('tabManagerSortOption')` preference:
+- If set to 'default': Still uses browser tab order
+- If set to other mode: Retains preference
+- **New users:** Default to 'group-recent'
+
+## Version History
+
+- **v2.2** - Recently Closed Tabs + Enhanced Default Sorting (group-recent mode)
+- **v2.1** - Visit counts, collapsible UI, wider popup
+- **v2.0** - Sort functionality with global/per-group modes
+- **v1.x** - Interactive pin/unpin, mute/unmute, visual indicators, age-based color coding

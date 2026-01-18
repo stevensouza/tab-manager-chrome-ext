@@ -1,12 +1,14 @@
 {
   "manifest_version": 3,
   "name": "Tab Manager",
-  "version": "2.1",
-  "description": "Manage tabs with search, filters, sorting, pin/mute controls, duplicate detection, and age-based color coding. Created by Steve Souza using Claude Code (experimental)",
+  "version": "2.2",
+  "description": "Manage tabs with search, filters, sorting, recently closed tabs with group restoration, pin/mute controls, duplicate detection, and age-based color coding. Created by Steve Souza using Claude Code (experimental)",
   "permissions": [
     "tabs",
     "tabGroups",
-    "history"
+    "history",
+    "sessions",
+    "storage"
   ],
   "icons": {
     "16": "icons/icon16.png",

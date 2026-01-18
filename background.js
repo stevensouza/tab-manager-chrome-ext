@@ -42,3 +42,138 @@ updateBadge();
 chrome.tabs.onCreated.addListener(updateBadge);
 chrome.tabs.onRemoved.addListener(updateBadge);
 chrome.windows.onFocusChanged.addListener(updateBadge);
+
+/**
+ * ============================================================================
+ * GROUP METADATA TRACKING FOR RECENTLY CLOSED TABS
+ * ============================================================================
+ *
+ * Problem: Chrome's sessions API (chrome.sessions.getRecentlyClosed) doesn't
+ * include tab group information. When we restore a closed tab, we don't know
+ * which group it belonged to.
+ *
+ * Solution: Track group metadata in background.js (runs independently of popup)
+ * and store it in chrome.storage.local for persistence across browser restarts.
+ *
+ * Flow:
+ * 1. Maintain tabGroupCache (Map) of current tab → group info
+ * 2. When tab closes, save its group metadata to chrome.storage.local
+ * 3. When restoring tab, popup.js looks up group info by URL+timestamp match
+ * 4. If original group still exists, add restored tab to that group
+ */
+
+/**
+ * Cache of current tab group states.
+ * Maps tabId → {url, groupId, groupTitle, groupColor}
+ * Updated whenever tabs change groups or URLs.
+ */
+let tabGroupCache = new Map();
+
+/**
+ * Tracks newly created tabs if they're in a group.
+ */
+chrome.tabs.onCreated.addListener(async (tab) => {
+  if (tab.groupId !== -1) {
+    try {
+      const group = await chrome.tabGroups.get(tab.groupId);
+      tabGroupCache.set(tab.id, {
+        url: tab.url,
+        groupId: tab.groupId,
+        groupTitle: group.title,
+        groupColor: group.color
+      });
+    } catch (error) {
+      // Group might not exist
+    }
+  }
+});
+
+/**
+ * Updates cache when tabs change groups or URLs.
+ * Fires on every tab update (URL change, group assignment, etc.)
+ */
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  // Only update cache when URL or groupId actually changes
+  // This avoids false deletions from temporary ungrouped states
+  if (changeInfo.url || changeInfo.groupId !== undefined) {
+    if (tab.groupId !== -1) {
+      try {
+        const group = await chrome.tabGroups.get(tab.groupId);
+        tabGroupCache.set(tabId, {
+          url: tab.url,
+          groupId: tab.groupId,
+          groupTitle: group.title,
+          groupColor: group.color
+        });
+      } catch (error) {
+        // Group might not exist anymore
+        tabGroupCache.delete(tabId);
+      }
+    }
+    // IMPORTANT: Don't delete from cache when ungrouped!
+    // When closing a tab with ×, Chrome first ungroups it, then closes it.
+    // We want to keep the group info until the tab is actually removed.
+  }
+});
+
+/**
+ * Saves group metadata to storage when tab closes.
+ * This allows us to restore tabs to their original groups.
+ */
+chrome.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
+  const cachedInfo = tabGroupCache.get(tabId);
+  if (cachedInfo) {
+    try {
+      // Store in chrome.storage.local keyed by URL+timestamp
+      const stored = await chrome.storage.local.get('closedTabGroups');
+      let groupMetadata = stored.closedTabGroups || {};
+
+      // Prevent unbounded growth - keep last 100 entries
+      const entries = Object.entries(groupMetadata);
+      if (entries.length >= 100) {
+        // Remove oldest entries
+        entries.sort((a, b) => a[1].closedAt - b[1].closedAt);
+        entries.splice(0, entries.length - 99);
+        groupMetadata = Object.fromEntries(entries);
+      }
+
+      // Store with unique key (URL + timestamp)
+      groupMetadata[`${cachedInfo.url}_${Date.now()}`] = {
+        url: cachedInfo.url,
+        groupId: cachedInfo.groupId,
+        groupTitle: cachedInfo.groupTitle,
+        groupColor: cachedInfo.groupColor,
+        closedAt: Date.now()
+      };
+
+      await chrome.storage.local.set({ closedTabGroups: groupMetadata });
+
+      // Clean up cache
+      tabGroupCache.delete(tabId);
+    } catch (error) {
+      console.warn('Failed to store group metadata:', error);
+    }
+  }
+});
+
+/**
+ * Initialize cache on startup.
+ * Loads current tab states when service worker first loads.
+ */
+chrome.tabs.query({}).then(async (tabs) => {
+  for (const tab of tabs) {
+    if (tab.groupId !== -1) {
+      try {
+        const group = await chrome.tabGroups.get(tab.groupId);
+        tabGroupCache.set(tab.id, {
+          url: tab.url,
+          groupId: tab.groupId,
+          groupTitle: group.title,
+          groupColor: group.color
+        });
+      } catch (error) {
+        // Skip tabs with invalid groups
+      }
+    }
+  }
+});
