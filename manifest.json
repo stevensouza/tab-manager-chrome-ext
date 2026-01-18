@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Tab Manager",
   "version": "2.2",
-  "description": "Manage tabs with search, filters, sorting, recently closed tabs with group restoration, pin/mute controls, duplicate detection, and age-based color coding. Created by Steve Souza using Claude Code (experimental)",
+  "description": "Manage tabs with search, filters, sorting, recently closed tabs with group restoration, pin/mute controls, duplicate detection, and age-based color coding. Created by Steve Souza using Claude Code (experimental). Repo: github.com/stevensouza/tab-manager-chrome-ext",
   "permissions": [
     "tabs",
     "tabGroups",
