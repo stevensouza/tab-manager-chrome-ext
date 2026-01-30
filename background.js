@@ -177,3 +177,196 @@ chrome.tabs.query({}).then(async (tabs) => {
     }
   }
 });
+
+// ============================================================================
+// TAB NAVIGATION BY RECENCY
+// ============================================================================
+
+/*
+ * Tab Manager Chrome Extension
+ * Created by: Steve Souza
+ *
+ * This is an experimental learning project.
+ * Can be removed at any time.
+ */
+
+// Navigation state per window
+const navigationState = new Map();
+
+/**
+ * Gets all tabs sorted by lastAccessed (most recent first).
+ * Returns array of tabs sorted descending by lastAccessed timestamp.
+ */
+async function getTabsSortedByRecency(windowId) {
+  const tabs = await chrome.tabs.query({ windowId: windowId });
+  return tabs.sort((a, b) => {
+    const timeA = a.lastAccessed || 0;
+    const timeB = b.lastAccessed || 0;
+    return timeB - timeA; // Descending (newest first)
+  });
+}
+
+/**
+ * Finds the index of a tab ID in the sorted array.
+ */
+function findTabIndex(sortedTabs, tabId) {
+  return sortedTabs.findIndex(tab => tab.id === tabId);
+}
+
+/**
+ * Gets or initializes navigation state for a window.
+ */
+function getNavigationState(windowId) {
+  if (!navigationState.has(windowId)) {
+    navigationState.set(windowId, {
+      sortedTabs: [],
+      currentPosition: 0,
+      lastUpdateTime: 0
+    });
+  }
+  return navigationState.get(windowId);
+}
+
+/**
+ * Resets navigation state (called on manual tab switch or timeout).
+ */
+function resetNavigationState(windowId) {
+  console.log('[Tab Manager] Resetting navigation state for window:', windowId);
+  navigationState.delete(windowId);
+}
+
+// Listen for manual tab activations to reset navigation
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  const state = navigationState.get(activeInfo.windowId);
+  if (state) {
+    // Check if this activation was from our navigation (within 500ms)
+    const timeSinceUpdate = Date.now() - state.lastUpdateTime;
+    if (timeSinceUpdate > 500) {
+      // Manual tab switch - reset state
+      resetNavigationState(activeInfo.windowId);
+    }
+  }
+});
+
+/**
+ * TOGGLE COMMAND - Switch to 2nd most recent tab.
+ */
+async function handleToggleRecent(windowId) {
+  const sortedTabs = await getTabsSortedByRecency(windowId);
+
+  if (sortedTabs.length < 2) {
+    return; // Need at least 2 tabs
+  }
+
+  // Activate 2nd most recent tab (index 1)
+  await chrome.tabs.update(sortedTabs[1].id, { active: true });
+}
+
+/**
+ * BACK COMMAND - Navigate to older tab in sorted list.
+ */
+async function handleNavigateBack(windowId) {
+  console.log('[Tab Manager] handleNavigateBack called for window:', windowId);
+
+  const state = getNavigationState(windowId);
+  const currentTime = Date.now();
+
+  // Initialize or refresh sorted tabs if state is empty or stale (>30 seconds)
+  if (state.sortedTabs.length === 0 || (currentTime - state.lastUpdateTime) > 30000) {
+    console.log('[Tab Manager] Initializing navigation state');
+    state.sortedTabs = await getTabsSortedByRecency(windowId);
+
+    // Find current active tab
+    const activeTabs = await chrome.tabs.query({ active: true, windowId: windowId });
+    if (activeTabs.length === 0) {
+      console.log('[Tab Manager] No active tab found, returning');
+      return;
+    }
+
+    state.currentPosition = findTabIndex(state.sortedTabs, activeTabs[0].id);
+    console.log('[Tab Manager] Initial position:', state.currentPosition, 'Total tabs:', state.sortedTabs.length);
+  }
+
+  // Move to next position (older tab)
+  const nextPosition = state.currentPosition + 1;
+  console.log('[Tab Manager] Current position:', state.currentPosition, 'Next position:', nextPosition, 'Total:', state.sortedTabs.length);
+
+  if (nextPosition >= state.sortedTabs.length) {
+    console.log('[Tab Manager] Already at oldest tab, returning');
+    return; // Already at oldest tab
+  }
+
+  // Update position and timestamp
+  state.currentPosition = nextPosition;
+  state.lastUpdateTime = currentTime;
+
+  const targetTab = state.sortedTabs[nextPosition];
+  console.log('[Tab Manager] Activating tab at position:', nextPosition, 'Tab ID:', targetTab.id, 'Title:', targetTab.title);
+  await chrome.tabs.update(targetTab.id, { active: true });
+}
+
+/**
+ * FORWARD COMMAND - Navigate to newer tab in sorted list.
+ */
+async function handleNavigateForward(windowId) {
+  console.log('[Tab Manager] handleNavigateForward called for window:', windowId);
+
+  const state = getNavigationState(windowId);
+
+  // Can't go forward if we haven't navigated back yet
+  if (state.sortedTabs.length === 0 || state.currentPosition === 0) {
+    console.log('[Tab Manager] Already at newest position or no navigation state');
+    return;
+  }
+
+  // Move to previous position (newer tab)
+  const prevPosition = state.currentPosition - 1;
+  console.log('[Tab Manager] Current position:', state.currentPosition, 'Previous position:', prevPosition);
+
+  if (prevPosition < 0) {
+    console.log('[Tab Manager] Already at newest tab, returning');
+    return; // Already at newest tab
+  }
+
+  // Update position and timestamp
+  state.currentPosition = prevPosition;
+  state.lastUpdateTime = Date.now();
+
+  const targetTab = state.sortedTabs[prevPosition];
+  console.log('[Tab Manager] Activating tab at position:', prevPosition, 'Tab ID:', targetTab.id, 'Title:', targetTab.title);
+  await chrome.tabs.update(targetTab.id, { active: true });
+}
+
+/**
+ * Command listener - Routes keyboard shortcuts to handlers.
+ */
+chrome.commands.onCommand.addListener(async (command) => {
+  console.log('[Tab Manager] Command received:', command);
+
+  // Get current focused window
+  const windows = await chrome.windows.getAll({ windowTypes: ['normal'] });
+  const currentWindow = windows.find(w => w.focused);
+  console.log('[Tab Manager] Focused window:', currentWindow?.id);
+
+  if (!currentWindow) {
+    console.log('[Tab Manager] No focused window found, returning');
+    return; // No focused window
+  }
+
+  switch (command) {
+    case 'toggle-recent-tab':
+      console.log('[Tab Manager] Calling handleToggleRecent');
+      await handleToggleRecent(currentWindow.id);
+      break;
+    case 'navigate-tab-back':
+      console.log('[Tab Manager] Calling handleNavigateBack');
+      await handleNavigateBack(currentWindow.id);
+      break;
+    case 'navigate-tab-forward':
+      console.log('[Tab Manager] Calling handleNavigateForward');
+      await handleNavigateForward(currentWindow.id);
+      break;
+    default:
+      console.log('[Tab Manager] Unknown command:', command);
+  }
+});

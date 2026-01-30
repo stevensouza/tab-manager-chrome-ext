@@ -1438,4 +1438,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // "Clear Filters" button
   document.getElementById('clearFiltersBtn').addEventListener('click', clearFilters);
+
+  // ============================================================================
+  // HELP MODAL
+  // ============================================================================
+
+  /*
+   * Tab Manager Chrome Extension
+   * Created by: Steve Souza
+   *
+   * This is an experimental learning project.
+   * Can be removed at any time.
+   */
+
+  const infoIcon = document.getElementById('infoIcon');
+  const helpModal = document.getElementById('helpModal');
+  const closeModal = document.querySelector('.close-modal');
+
+  // Open modal when info icon clicked
+  infoIcon.addEventListener('click', () => {
+    helpModal.style.display = 'block';
+  });
+
+  // Close modal when X clicked
+  closeModal.addEventListener('click', () => {
+    helpModal.style.display = 'none';
+  });
+
+  // Close modal when clicking outside
+  window.addEventListener('click', (e) => {
+    if (e.target === helpModal) {
+      helpModal.style.display = 'none';
+    }
+  });
 });

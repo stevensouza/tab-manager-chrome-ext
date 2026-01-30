@@ -9,7 +9,7 @@
     <!-- Extension title and attribution -->
     <h1>
       Tab Manager
-      <span class="info-icon" title="Border colors indicate tab age:&#10;🟢 Green = ≤ 2 hours&#10;🟡 Yellow = ≤ 24 hours&#10;🟠 Orange = ≤ 1 week&#10;🔴 Red = > 1 week">ℹ️</span>
+      <span class="info-icon" id="infoIcon">ℹ️</span>
     </h1>
     <p class="subtitle">by Steve Souza & Claude Code (01/26)</p>
 
@@ -78,6 +78,51 @@
     <!-- Footer attribution -->
     <div class="footer">
       Created by <a href="https://github.com/stevensouza/tab-manager-chrome-ext" target="_blank">Steve Souza</a> | Experimental Project
+    </div>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2>Tab Manager Help</h2>
+
+        <h3>⌨️ Keyboard Shortcuts</h3>
+        <table class="help-table">
+          <tr>
+            <td><kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>↑</kbd> (Mac)<br><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>↑</kbd> (Win)</td>
+            <td>Toggle between current and previous tab</td>
+          </tr>
+          <tr>
+            <td><kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>←</kbd> (Mac)<br><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>←</kbd> (Win)</td>
+            <td>Navigate to older tab (by last accessed)</td>
+          </tr>
+          <tr>
+            <td><kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>→</kbd> (Mac)<br><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>→</kbd> (Win)</td>
+            <td>Navigate to newer tab (by last accessed)</td>
+          </tr>
+        </table>
+        <p class="help-note">💡 Customize shortcuts at <a href="chrome://extensions/shortcuts" target="_blank">chrome://extensions/shortcuts</a></p>
+
+        <h3>🎨 Border Colors (Tab Age)</h3>
+        <table class="help-table">
+          <tr>
+            <td>🟢 Green</td>
+            <td>≤ 2 hours (recently accessed)</td>
+          </tr>
+          <tr>
+            <td>🟡 Yellow</td>
+            <td>≤ 24 hours (hours ago)</td>
+          </tr>
+          <tr>
+            <td>🟠 Orange</td>
+            <td>≤ 1 week (days old)</td>
+          </tr>
+          <tr>
+            <td>🔴 Red</td>
+            <td>> 1 week (very old)</td>
+          </tr>
+        </table>
+      </div>
     </div>
   </div>
 

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tab Manager",
-  "version": "2.2",
+  "version": "2.3",
   "description": "Manage tabs with search, filters, sorting, recently closed tabs with group restoration, pin/mute controls, duplicate detection, and age-based color coding. Created by Steve Souza using Claude Code (experimental). Repo: github.com/stevensouza/tab-manager-chrome-ext",
   "permissions": [
     "tabs",
@@ -10,6 +10,29 @@
     "sessions",
     "storage"
   ],
+  "commands": {
+    "toggle-recent-tab": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Up",
+        "mac": "Command+Shift+Up"
+      },
+      "description": "Toggle between current and most recent tab"
+    },
+    "navigate-tab-back": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Left",
+        "mac": "Command+Shift+Left"
+      },
+      "description": "Navigate to older tab (by last accessed)"
+    },
+    "navigate-tab-forward": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Right",
+        "mac": "Command+Shift+Right"
+      },
+      "description": "Navigate to newer tab (by last accessed)"
+    }
+  },
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",

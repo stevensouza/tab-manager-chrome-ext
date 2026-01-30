@@ -26,6 +26,22 @@ This Chrome extension helps you manage browser tabs with features like search, f
 
 ## Features
 
+### ⌨️ Keyboard Shortcuts (v2.3)
+
+**Toggle between current and previous tab:**
+- Windows/Linux: `Ctrl+Shift+Up`
+- Mac: `⌘⇧↑` (Cmd+Shift+Up)
+
+**Navigate to older tab (by last accessed):**
+- Windows/Linux: `Ctrl+Shift+Left`
+- Mac: `⌘⇧←` (Cmd+Shift+Left)
+
+**Navigate to newer tab (by last accessed):**
+- Windows/Linux: `Ctrl+Shift+Right`
+- Mac: `⌘⇧→` (Cmd+Shift+Right)
+
+**Customizable** - Change shortcuts at `chrome://extensions/shortcuts`
+
 ### 🔍 Search & Filter
 - **Real-time search** - Filter tabs by title or URL
 - **Group name search** - Search by tab group names
@@ -414,6 +430,16 @@ tab-manager-chrome-ext/
 - Can be removed at any time
 
 ## Changelog
+
+**Version 2.3 (2026-01-30)**
+- ⌨️ **NEW:** Keyboard shortcuts for tab navigation
+- ⌨️ **NEW:** Toggle between current/previous tab (Ctrl+Shift+Up / Cmd+Shift+Up)
+- ⌨️ **NEW:** Navigate through tabs by recency (Ctrl+Shift+Left/Right)
+- ℹ️ **NEW:** Clickable help modal with keyboard shortcuts and color legend
+- ℹ️ **IMPROVED:** Removed confusing tooltip delay on info icon
+- 🎨 User-configurable shortcuts via chrome://extensions/shortcuts
+- 📝 Each tab appears once in navigation (sorted by last accessed time)
+- 🪟 Window-scoped navigation (commands only affect focused window)
 
 **Version 2.2 (2025-01-27)**
 - ✨ **NEW:** Recently Closed Tabs feature - track and restore last 25 closed tabs
