@@ -585,6 +585,7 @@ function renderTabs(searchTerm = '') {
       duplicateFilterActive = false;
       const dupesChip = document.querySelector('.filter-chip[data-filter="dupes"]');
       if (dupesChip) dupesChip.classList.remove('active');
+      saveChipState();
       renderTabs(searchTerm);
       return;
     }
@@ -832,11 +833,11 @@ function renderFavoriteSites() {
 
   const tabList = document.getElementById('tabList');
 
-  // Build set of open origins for matching
-  const openOrigins = new Set(allTabs.map(t => getUrlOrigin(t.url)));
+  // Build set of open URLs for matching
+  const openUrls = new Set(allTabs.map(t => t.url));
 
   // Filter to only unopened favorites
-  let unopenedFavorites = favoriteSites.filter(fav => !openOrigins.has(fav.url));
+  let unopenedFavorites = favoriteSites.filter(fav => !openUrls.has(fav.url));
 
   // Apply search filter
   if (currentSearchTerm) {
@@ -1050,7 +1051,7 @@ function createTabElement(tab, groupColor = null, groupTitle = null) {
   favBtn.title = isFav ? 'Remove from favorites' : 'Add to favorites';
   favBtn.addEventListener('click', (e) => {
     if (isFavoriteUrl(tab.url)) {
-      removeFavorite(getUrlOrigin(tab.url), e);
+      removeFavorite(tab.url, e);
     } else {
       addFavorite(tab, e);
     }
@@ -1167,6 +1168,7 @@ function toggleDuplicateFilter() {
   const dupesChip = document.querySelector('.filter-chip[data-filter="dupes"]');
   if (dupesChip) dupesChip.classList.toggle('active', duplicateFilterActive);
 
+  saveChipState();
   renderTabs(currentSearchTerm);
 }
 
@@ -1185,6 +1187,7 @@ function clearFilters() {
   const searchBox = document.getElementById('searchBox');
   searchBox.value = '';
   currentSearchTerm = '';
+  localStorage.setItem('tabManagerSearchTerm', '');
 
   // Clear duplicate filter
   duplicateFilterActive = false;
@@ -1207,6 +1210,8 @@ function clearFilters() {
   combineFiltersMode = false;
   const combineToggle = document.getElementById('combineFiltersToggle');
   if (combineToggle) combineToggle.checked = false;
+
+  saveChipState();
 
   // Reset sort to default
   currentSortOption = 'default';
@@ -1247,6 +1252,52 @@ function clearFilters() {
 function anyChipFilterActive() {
   return duplicateFilterActive || audioFilterActive || pinnedFilterActive ||
          favoritesFilterActive || oldTabsFilterActive;
+}
+
+/**
+ * Saves current chip filter state to localStorage.
+ */
+function saveChipState() {
+  const state = {
+    dupes: duplicateFilterActive,
+    audio: audioFilterActive,
+    pinned: pinnedFilterActive,
+    faves: favoritesFilterActive,
+    old: oldTabsFilterActive,
+    combine: combineFiltersMode
+  };
+  localStorage.setItem('tabManagerChipState', JSON.stringify(state));
+}
+
+/**
+ * Restores chip filter state from localStorage and updates UI.
+ */
+function restoreChipState() {
+  const saved = localStorage.getItem('tabManagerChipState');
+  if (!saved) return;
+  try {
+    const state = JSON.parse(saved);
+    duplicateFilterActive = state.dupes || false;
+    audioFilterActive = state.audio || false;
+    pinnedFilterActive = state.pinned || false;
+    favoritesFilterActive = state.faves || false;
+    oldTabsFilterActive = state.old || false;
+    combineFiltersMode = state.combine || false;
+
+    // Update chip UI
+    const filterMap = { dupes: duplicateFilterActive, audio: audioFilterActive,
+      pinned: pinnedFilterActive, faves: favoritesFilterActive, old: oldTabsFilterActive };
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+      const filter = chip.dataset.filter;
+      if (filterMap[filter]) chip.classList.add('active');
+    });
+
+    // Update combine toggle UI
+    const combineToggle = document.getElementById('combineFiltersToggle');
+    if (combineToggle) combineToggle.checked = combineFiltersMode;
+  } catch {
+    // Ignore corrupt data
+  }
 }
 
 function tabMatchesFilters(tab) {
@@ -1482,8 +1533,8 @@ function getUrlOrigin(url) {
  * Shows count of unopened favorites (favorites not currently open in any tab).
  */
 function updateFavoritesCount() {
-  const openOrigins = new Set(allTabs.map(t => getUrlOrigin(t.url)));
-  const unopenedFavCount = favoriteSites.filter(fav => !openOrigins.has(fav.url)).length;
+  const openUrls = new Set(allTabs.map(t => t.url));
+  const unopenedFavCount = favoriteSites.filter(fav => !openUrls.has(fav.url)).length;
   const favCountEl = document.getElementById('favoriteSitesCount');
   if (favCountEl) {
     favCountEl.textContent = unopenedFavCount;
@@ -1497,25 +1548,24 @@ function updateFavoritesCount() {
  * @returns {boolean} True if URL's origin matches a stored favorite
  */
 function isFavoriteUrl(url) {
-  const origin = getUrlOrigin(url);
-  return favoriteSites.some(fav => fav.url === origin);
+  return favoriteSites.some(fav => fav.url === url);
 }
 
 /**
- * Adds a tab as a favorite site. Stores origin-only URL.
+ * Adds a tab as a favorite site. Stores the full URL (like a bookmark).
  *
  * @param {Object} tab - Chrome tab object
  * @param {Event} event - Click event
  */
 async function addFavorite(tab, event) {
   event.stopPropagation();
-  const origin = getUrlOrigin(tab.url);
+  const url = tab.url;
   // Don't add duplicates
-  if (favoriteSites.some(fav => fav.url === origin)) return;
+  if (favoriteSites.some(fav => fav.url === url)) return;
 
   favoriteSites.push({
-    url: origin,
-    title: tab.title || origin,
+    url: url,
+    title: tab.title || url,
     favIconUrl: tab.favIconUrl || ''
   });
 
@@ -1600,8 +1650,8 @@ async function loadTabs() {
   }
 
   // Update favorites count - show only unopened favorites
-  const openOrigins = new Set(allTabs.map(t => getUrlOrigin(t.url)));
-  const unopenedFavCount = favoriteSites.filter(fav => !openOrigins.has(fav.url)).length;
+  const openUrls = new Set(allTabs.map(t => t.url));
+  const unopenedFavCount = favoriteSites.filter(fav => !openUrls.has(fav.url)).length;
   const favCountEl = document.getElementById('favoriteSitesCount');
   if (favCountEl) {
     favCountEl.textContent = unopenedFavCount;
@@ -1670,6 +1720,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('globalSortCheckbox').checked = true;
   }
 
+  // Restore saved chip filter state from localStorage
+  restoreChipState();
+
   // Show/hide global sort checkbox based on sort option
   const globalSortContainer = document.getElementById('globalSortContainer');
   if (currentSortOption !== 'default' && currentSortOption !== 'group-recent') {
@@ -1691,12 +1744,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // Add toggle listener for collapsible controls
   button.addEventListener('click', toggleControls);
 
+  // Restore saved search term from localStorage
+  const savedSearch = localStorage.getItem('tabManagerSearchTerm');
+  if (savedSearch) {
+    currentSearchTerm = savedSearch;
+    document.getElementById('searchBox').value = savedSearch;
+  }
+
   // Load and display all tabs
   loadTabs();
 
   // Real-time search as user types
   const searchBox = document.getElementById('searchBox');
   searchBox.addEventListener('input', (e) => {
+    localStorage.setItem('tabManagerSearchTerm', e.target.value);
     renderTabs(e.target.value);
   });
 
@@ -1759,6 +1820,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setChipFilter(filter, !wasActive);
       chip.classList.toggle('active', !wasActive);
 
+      saveChipState();
       renderTabs(currentSearchTerm);
     });
   });
@@ -1786,6 +1848,7 @@ document.addEventListener('DOMContentLoaded', () => {
           renderTabs(currentSearchTerm);
         }
       }
+      saveChipState();
     });
   }
 
