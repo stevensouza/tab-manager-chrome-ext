@@ -1838,6 +1838,12 @@ document.addEventListener('DOMContentLoaded', () => {
     helpModal.style.display = 'block';
   });
 
+  // Open chrome://extensions/shortcuts via chrome.tabs.create (direct links blocked)
+  const openShortcutsBtn = document.getElementById('openShortcutsBtn');
+  openShortcutsBtn.addEventListener('click', () => {
+    chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
+  });
+
   // Close modal when X clicked
   closeModal.addEventListener('click', () => {
     helpModal.style.display = 'none';

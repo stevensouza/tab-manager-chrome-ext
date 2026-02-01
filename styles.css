@@ -1053,6 +1053,22 @@ kbd {
   text-decoration: underline;
 }
 
+/* Button styled as link for chrome:// URLs (direct links blocked by Chrome) */
+.shortcuts-link-btn {
+  background: none;
+  border: none;
+  color: #1a73e8;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0;
+  font-family: inherit;
+}
+
+.shortcuts-link-btn:hover {
+  color: #1557b0;
+}
+
 /* Info icon - clickable */
 .info-icon {
   cursor: pointer;
