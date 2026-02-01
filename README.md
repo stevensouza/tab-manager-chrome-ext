@@ -42,12 +42,25 @@ This Chrome extension helps you manage browser tabs with features like search, f
 
 **Customizable** - Change shortcuts at `chrome://extensions/shortcuts`
 
+### ⭐ Favorite Sites (v2.4)
+- **Star any tab** - Hover to see ☆ button, click to save site as favorite
+- **Domain-level matching** - Stores origin only (e.g., `https://mail.google.com`), ignores paths/session IDs
+- **Find or open** - Unopened favorites appear grayed out at bottom of popup, click to open
+- **Cross-device sync** - Favorites stored in `chrome.storage.sync`
+- **Smart visibility** - Favorites disappear from bottom section when the site is open
+
+### 🏷️ Filter Chips (v2.4)
+- **Always visible** - Row of pill buttons above search box (no need to expand controls)
+- **5 filter types** - Duplicates, Audio, Pinned, Favorites, Stale (1w+)
+- **Single-select default** - Clicking one chip deselects others
+- **AND mode** - Check "AND" checkbox to combine multiple filters
+- **Clean results** - Recently closed and favorites sections hidden when filtering
+
 ### 🔍 Search & Filter
 - **Real-time search** - Filter tabs by title or URL
 - **Group name search** - Search by tab group names
-- **Show Only Duplicates** - Toggle to view only duplicate tabs
 - **Group filtering** - Click group headers to filter by specific groups
-- **Clear Filters** - One-click button to reset all filters and sorting
+- **Clear Filters** - One-click button to reset all filters, chips, and sorting
 
 ### 📊 Tab Management
 - **Tab count badge** - Shows total tab count in extension icon
@@ -116,6 +129,8 @@ This Chrome extension helps you manage browser tabs with features like search, f
 │ Total groups: 3 | Total tabs: 12                         │
 │                                                           │
 │ [▼ Filters & Sort                                      ]  │ ← Click to expand
+│                                                           │
+│ [Duplicates] [Audio] [Pinned] [Favorites] [Stale(1w+)] ☐AND │ ← Filter chips
 │ ┌───────────────────────────────────────────────────────┐ │
 │ │ Search tabs and groups...                             │ │
 │ └───────────────────────────────────────────────────────┘ │
@@ -123,33 +138,38 @@ This Chrome extension helps you manage browser tabs with features like search, f
 │ ┌─────────────────────────────────────────────────────┐   │
 │ │ 🔵 Work (5)                                      [×]│   │ ← Group header
 │ └─────────────────────────────────────────────────────┘   │
-│  🌐📌🔈 GitHub - Pull Requests            [42]        [×]  │ ← 42 visits
-│  📧 Gmail - Inbox                   [2×] [89] 🔇     [×]  │ ← Dup + 89 visits
-│  📊 Google Sheets - Q1 Data              [156]       [×]  │ ← Active, 156 visits
-│  📧 Gmail - Inbox                   [2×] [89]        [×]  │
-│  📝 Notion - Projects                                [×]  │
+│  🌐📌🔈 GitHub - Pull Requests      [42]     [☆]  [×]  │ ← Star to favorite
+│  📧 Gmail - Inbox             [2×] [89] 🔇   [★]  [×]  │ ← Already favorited
+│  📊 Google Sheets - Q1 Data        [156]     [☆]  [×]  │
+│  📧 Gmail - Inbox             [2×] [89]      [☆]  [×]  │
+│  📝 Notion - Projects                        [☆]  [×]  │
 │                                                           │
 │ ┌─────────────────────────────────────────────────────┐   │
-│ │ 🟢 Research (4)                                  [×]│   │ ← Group header
+│ │ 🟢 Research (4)                                  [×]│   │
 │ └─────────────────────────────────────────────────────┘   │
-│  📄 Wikipedia - React                                [×]  │
-│  🔍 Stack Overflow - Async Questions     [3×]        [×]  │
-│  📰 Medium - Web Development                         [×]  │
-│  🔍 Stack Overflow - Async Questions     [3×]        [×]  │
+│  📄 Wikipedia - React                        [☆]  [×]  │
+│  🔍 Stack Overflow - Async Questions  [3×]   [☆]  [×]  │
+│  📰 Medium - Web Development                [☆]  [×]  │
+│  🔍 Stack Overflow - Async Questions  [3×]   [☆]  [×]  │
 │                                                           │
 │ ┌─────────────────────────────────────────────────────┐   │
 │ │ Ungrouped Tabs (3)                                  │   │
 │ └─────────────────────────────────────────────────────┘   │
-│  🎵🔊 YouTube - Music                                 [×]  │ ← Playing audio
-│  🛒 Amazon - Shopping Cart               [2×]        [×]  │
-│  🛒 Amazon - Shopping Cart               [2×]        [×]  │
+│  🎵🔊 YouTube - Music                       [☆]  [×]  │ ← Playing audio
+│  🛒 Amazon - Shopping Cart         [2×]     [☆]  [×]  │
+│  🛒 Amazon - Shopping Cart         [2×]     [☆]  [×]  │
 │                                                           │
 │ ┌─────────────────────────────────────────────────────┐   │
 │ │ Recently Closed (3)                                 │   │
 │ └─────────────────────────────────────────────────────┘   │
-│  📰 CNN News Article          🔵Work    5m ago       [↶]  │ ← Closed from Work
-│  🔍 Stack Overflow Question              2h ago      [↶]  │ ← Was ungrouped
-│  📧 Gmail - Old Email         🟢Research 1d ago      [↶]  │ ← Closed from Research
+│  📰 CNN News Article          🔵Work    5m ago       [↶]  │
+│  🔍 Stack Overflow Question              2h ago      [↶]  │
+│  📧 Gmail - Old Email         🟢Research 1d ago      [↶]  │
+│                                                           │
+│ ┌─────────────────────────────────────────────────────┐   │
+│ │ ⭐ Favorite Sites (1)                               │   │ ← Gold header
+│ └─────────────────────────────────────────────────────┘   │
+│  🐙 GitHub                                          [×]  │ ← Grayed out, click to open
 │                                                           │
 │ Created by Steve Souza | Experimental Project             │
 └───────────────────────────────────────────────────────────┘
@@ -165,11 +185,11 @@ This Chrome extension helps you manage browser tabs with features like search, f
 │                                                           │
 │ [▲ Filters & Sort                                      ]  │ ← Click to collapse
 │                                                           │
-│ [Show Only Duplicates] [Close Duplicates]                │
-│ [Show Recently Closed (3)]                               │
+│ [Close Duplicates] [Show Recently Closed (3)]            │
 │ [Sort: Most Visited First ▼]      [Clear Filters]        │
 │ ☑ Sort globally (across all groups)                      │
 │                                                           │
+│ [Duplicates] [Audio] [Pinned] [Favorites] [Stale(1w+)] ☐AND │
 │ ┌───────────────────────────────────────────────────────┐ │
 │ │ Search tabs and groups...                             │ │
 │ └───────────────────────────────────────────────────────┘ │
@@ -189,7 +209,7 @@ This Chrome extension helps you manage browser tabs with features like search, f
 │ Total tab groups: 3                     │
 │ Total tabs: 12                          │
 │                                         │
-│ [Show Only Duplicates] [Close Dupes]   │
+│ [Close Duplicates] [Show Recently ...]  │
 │ [Sort: Title (A→Z)▼]      [Clear]      │ ← Sort active
 │ ☐ Sort globally (across all groups)    │ ← Checkbox (unchecked)
 │ ┌─────────────────────────────────────┐ │
@@ -233,7 +253,7 @@ This Chrome extension helps you manage browser tabs with features like search, f
 │ Total tab groups: 3                     │
 │ Total tabs: 12                          │
 │                                         │
-│ [Show Only Duplicates] [Close Dupes]   │
+│ [Close Duplicates] [Show Recently ...]  │
 │ [Sort: Title (A→Z)▼]      [Clear]      │
 │ ☑ Sort globally (across all groups)    │ ← Checkbox CHECKED
 │ ┌─────────────────────────────────────┐ │
@@ -261,10 +281,14 @@ This Chrome extension helps you manage browser tabs with features like search, f
 ### Legend
 - [▼ Filters & Sort] - Toggle button (click to show/hide controls)
 - [▲ Filters & Sort] - Controls expanded (click to collapse)
+- [Duplicates] [Audio] etc. - Filter chips (click to filter, always visible)
+- ☐AND - Combine multiple chip filters (default: single-select)
 - 🔵🟢🔴🟡 - Group color badges (in recently closed and global sort mode)
 - 🔘No Group - Ungrouped tab badge (gray, appears in global sort mode)
-- [×] - Close button (appears on hover for open tabs)
+- [×] - Close button (appears on hover for open tabs / favorite sites)
 - [↶] - Restore button (always visible for closed tabs)
+- [☆] - Add to favorites (appears on hover)
+- [★] - Already favorited (click to remove)
 - [2×][3×] - Duplicate count badge (orange, current tabs only)
 - [42][156] - Visit count badge (blue, total visits from browser history)
 - 5m ago, 2h ago, 1d ago - Time since tab was closed (recently closed section)
@@ -277,9 +301,10 @@ This Chrome extension helps you manage browser tabs with features like search, f
 - 🟡 Yellow border - Accessed hours ago (≤24 hours)
 - 🟠 Orange border - Days old (≤1 week)
 - 🔴 Red border - Very old (>1 week)
-- Grayed out tab - Recently closed tab (not currently open)
+- Grayed out (grey) - Recently closed tab (not currently open)
+- Grayed out (gold border) - Favorite site not currently open
 - Favicon emojis - Website icons (🌐📧📊🔍📄📰🎵🛒)
-- ℹ️ - Info icon (hover to see age color legend)
+- ℹ️ - Info icon (click to see help modal)
 
 ## Installation
 
@@ -326,28 +351,55 @@ This Chrome extension helps you manage browser tabs with features like search, f
 - Click any tab in the list to switch to it
 - Switches window focus if tab is in another window
 
+### Filter Chips
+
+**Quick Filters (always visible above search box):**
+- **Duplicates** - Show only tabs with duplicate URLs
+- **Audio** - Show only tabs playing or muting audio
+- **Pinned** - Show only pinned tabs
+- **Favorites** - Show only favorited sites (open + unopened grayed out)
+- **Stale (1w+)** - Show only tabs not accessed in over a week
+
+**Single-select (default):** Clicking one chip deselects others.
+**AND mode:** Check the "AND" checkbox to combine multiple filters.
+
+When chips are active, recently closed and favorites sections are hidden for a clean filtered view.
+
+### Favorite Sites
+
+**Add Favorites:**
+1. Hover over any tab to see the ☆ star button
+2. Click ☆ to save the site as a favorite (stores domain only)
+3. Star changes to ★ to indicate it's favorited
+
+**View Unopened Favorites:**
+- Favorites not currently open appear grayed out at the bottom (gold border)
+- Click to open the site in a new tab
+- Section automatically hides when the site is open
+
+**Remove Favorites:**
+- Hover over a grayed-out favorite and click × to remove
+
 ### Duplicate Management
 
 **View Duplicates:**
 1. Orange badges (e.g., "2×") appear on duplicate tabs
-2. Click "Show Only Duplicates" to filter view
+2. Click "Duplicates" chip to filter view
 3. Click again to show all tabs
 
 **Close Duplicates:**
-1. Click "Close Duplicates" button
-2. Keeps one copy of each duplicate URL
-3. Preferentially keeps the active tab
-4. Respects active filters:
-   - If searching "github" → only closes github duplicates
-   - If filtering by group → only closes duplicates in that group
-   - If "Show Only Duplicates" is on → closes visible duplicates
+1. Expand "Filters & Sort" controls
+2. Click "Close Duplicates" button
+3. Keeps one copy of each duplicate URL
+4. Preferentially keeps the active tab
+5. Respects all active filters (search, group, chips)
 
 ### Filter Combinations
 
-Filters work together (AND logic):
+Filters work together (AND logic when AND checkbox is checked):
 - Search + Group filter → Shows tabs matching both
-- Search + Duplicate filter → Shows duplicates matching search
-- All three → Shows duplicates in specific group matching search
+- Search + Duplicates chip → Shows duplicates matching search
+- Multiple chips + Search → All conditions must match
 
 Click group header again to clear group filter.
 
@@ -378,7 +430,7 @@ Click group header again to clear group filter.
 - **View and manage your tab groups** (`tabGroups`) - To read and display tab group information
 - **Read your browsing history** (`history`) - To show visit counts from browser history (data never leaves your browser)
 - **Access recently closed tabs** (`sessions`) - To track and restore recently closed tabs
-- **Store group metadata** (`storage`) - To save which group closed tabs belonged to (local storage only)
+- **Store data** (`storage`) - Group metadata for closed tabs (local), favorite sites synced across devices (sync)
 
 **No website content access** - Extension does not read or modify webpage content.
 
@@ -389,8 +441,8 @@ tab-manager-chrome-ext/
 ├── manifest.json       # Extension configuration
 ├── background.js       # Badge counter + group metadata tracking for closed tabs
 ├── popup.html          # Popup UI structure
-├── popup.js            # Main logic (search, filter, sort, duplicates, recently closed)
-├── styles.css          # Styling (includes interactive buttons, age colors, closed tabs)
+├── popup.js            # Main logic (search, filter chips, sort, favorites, duplicates, recently closed)
+├── styles.css          # Styling (includes filter chips, favorites, interactive buttons, age colors)
 ├── icons/              # Extension icons (16, 32, 48, 128px)
 ├── CLAUDE.md           # Development guide for Claude Code
 └── README.md           # This file
@@ -403,7 +455,7 @@ tab-manager-chrome-ext/
 - **No external dependencies**
 - **Pure JavaScript** (no frameworks)
 - **Service Worker** for background badge updates + group metadata tracking
-- **Chrome APIs:** `chrome.tabs`, `chrome.tabGroups`, `chrome.sessions`, `chrome.storage.local`, `chrome.history`, `chrome.action`, `chrome.windows`
+- **Chrome APIs:** `chrome.tabs`, `chrome.tabGroups`, `chrome.sessions`, `chrome.storage.local`, `chrome.storage.sync`, `chrome.history`, `chrome.action`, `chrome.windows`
 
 ## Known Limitations
 
@@ -416,7 +468,7 @@ tab-manager-chrome-ext/
 **Built with:**
 - Chrome Extensions Manifest V3
 - Vanilla JavaScript
-- Chrome APIs: `chrome.tabs`, `chrome.tabGroups`, `chrome.sessions`, `chrome.storage.local`, `chrome.history`, `chrome.action`, `chrome.windows`
+- Chrome APIs: `chrome.tabs`, `chrome.tabGroups`, `chrome.sessions`, `chrome.storage.local`, `chrome.storage.sync`, `chrome.history`, `chrome.action`, `chrome.windows`
 
 **Key Implementation Details:**
 - Background service worker tracks group metadata for closed tabs
@@ -430,6 +482,21 @@ tab-manager-chrome-ext/
 - Can be removed at any time
 
 ## Changelog
+
+**Version 2.4 (2026-01-31)**
+- ⭐ **NEW:** Favorite Sites - star any tab to save as favorite, unopened favorites shown grayed out at bottom
+- ⭐ **NEW:** Domain-level matching - stores origin only, ignores paths/session IDs (e.g., Gmail → `https://mail.google.com`)
+- ⭐ **NEW:** Cross-device sync for favorites via `chrome.storage.sync`
+- 🏷️ **NEW:** Filter chips row - Duplicates, Audio, Pinned, Favorites, Stale (1w+) - always visible above search
+- 🏷️ **NEW:** Single-select chip mode by default, AND checkbox to combine multiple
+- 🏷️ **NEW:** Tooltips on all chips explaining what they filter
+- 🧹 **REMOVED:** "Show Only Duplicates" button (replaced by Duplicates chip)
+- 🧹 **REMOVED:** Separate Favorites toggle button (section shows automatically)
+- 🐛 **FIXED:** Filter chips now properly filter displayed tabs (shared `tabMatchesFilters()`)
+- 🐛 **FIXED:** Recently closed and favorites sections now render in global sort mode
+- 🎨 Gold/amber theme for favorite sites section (distinguishes from grey recently closed)
+- 🎨 Clean chip pill styling with active state highlighting
+- ⚡ Recently closed and favorites sections auto-hide when chip filters active
 
 **Version 2.3 (2026-01-30)**
 - ⌨️ **NEW:** Keyboard shortcuts for tab navigation

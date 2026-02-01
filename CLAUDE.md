@@ -37,7 +37,7 @@ Tab Manager - A Chrome extension (Manifest V3) for managing browser tabs with gr
 - **manifest.json** - Extension config, permissions (tabs, tabGroups, sessions, storage, history - NO website content access)
 - **background.js** - Service worker that updates badge with tab count AND tracks group metadata for recently closed tabs
 - **popup.html** - Popup UI structure (minimal, most elements created dynamically in JS)
-- **popup.js** - Main application logic (1400+ lines)
+- **popup.js** - Main application logic (1800+ lines)
 - **styles.css** - All styling including group colors matching Chrome's native groups
 
 ### Permissions
@@ -46,7 +46,7 @@ Tab Manager - A Chrome extension (Manifest V3) for managing browser tabs with gr
 - **tabGroups** - Read and manage tab groups
 - **history** - Access visit counts for tabs
 - **sessions** - Access recently closed tabs via chrome.sessions API
-- **storage** - Store group metadata for closed tabs (chrome.storage.local)
+- **storage** - Store group metadata for closed tabs (chrome.storage.local) + favorite sites (chrome.storage.sync)
 
 **NO website content access** - Extension never reads or modifies web page content.
 
@@ -61,18 +61,20 @@ loadTabs()
   - Builds urlCounts map (for duplicate detection)
   - Builds visitCounts map (from browser history)
   - Loads recentlyClosedTabs (chrome.sessions + group metadata)
-  - Updates tab/group/closed count displays
+  - Loads favoriteSites (chrome.storage.sync)
+  - Updates tab/group/closed/favorites count displays
   - Calls renderTabs()
 
 renderTabs(searchTerm)
   ↓
   - Organizes tabs by groups (organizeTabsByGroup)
   - Sorts groups alphabetically (if group-recent mode)
-  - Applies filters: search, duplicate, group (tabMatchesFilters)
+  - Applies filters: search, duplicate, group, chips (tabMatchesFilters)
   - Renders group headers with tab counts
-  - Renders tabs with favicons, badges, close buttons (createTabElement)
+  - Renders tabs with favicons, badges, star/close buttons (createTabElement)
   - Renders ungrouped tabs
-  - Renders recently closed tabs (renderRecentlyClosedTabs) - ALWAYS LAST
+  - Renders recently closed tabs (renderRecentlyClosedTabs) - hidden when chips active
+  - Renders favorite sites (renderFavoriteSites) - ALWAYS LAST, hidden when non-Faves chips active
 ```
 
 ### State Management (Global Variables in popup.js)
@@ -85,10 +87,16 @@ activeTabId = null        // ID of active tab (for highlighting)
 urlCounts = {}            // Map of URL → count (for duplicate detection)
 visitCounts = {}          // Map of URL → visit count (from history)
 currentSearchTerm = ''    // Current search filter text
-duplicateFilterActive = false  // "Show Only Duplicates" toggle state
+duplicateFilterActive = false  // Duplicates chip state
 currentSortOption = 'group-recent'  // Default sort mode (v2.2+)
 recentlyClosedTabs = []   // Recently closed tabs from sessions API
 closedTabsVisible = false // Toggle state for closed tabs section
+favoriteSites = []        // Favorite sites from chrome.storage.sync
+audioFilterActive = false // Audio chip state
+pinnedFilterActive = false // Pinned chip state
+favoritesFilterActive = false // Favorites chip state
+oldTabsFilterActive = false // Stale (1w+) chip state
+combineFiltersMode = false // AND mode for chips (default: single-select)
 ```
 
 ### Filter Logic - Critical Implementation Detail
@@ -96,13 +104,31 @@ closedTabsVisible = false // Toggle state for closed tabs section
 **Filters use AND logic** - all active filters must match for a tab to be visible.
 
 The `tabMatchesFilters(tab)` function is shared by:
-1. `renderTabs()` - for displaying tabs
+1. `renderTabs()` - for displaying tabs (via `matchesAllFilters`)
 2. `closeDuplicateTabs()` - for closing only visible duplicates
+
+Filters checked (all AND):
+- Search term (title/URL match)
+- Duplicate filter (chip)
+- Group filter (click group header)
+- Audio filter (chip: `tab.audible || tab.mutedInfo?.muted`)
+- Pinned filter (chip: `tab.pinned`)
+- Favorites filter (chip: origin matches a favorite site)
+- Old tabs filter (chip: `lastAccessed > 1 week ago`)
 
 This ensures "Close Duplicates" respects active filters:
 - Search "github" → only closes github duplicates
 - Filter by group → only closes duplicates in that group
 - Combined filters → respects all simultaneously
+
+### Filter Chips Behavior
+
+**Single-select mode (default):** Clicking a chip deselects all others.
+**AND mode:** Check the "AND" checkbox to combine multiple chips.
+
+**Section visibility:** When any chip is active, recently closed and favorite sites
+sections are hidden (chips only filter open tabs). Exception: Favorites chip keeps
+the favorite sites section visible.
 
 ### Duplicate Detection Algorithm
 
@@ -507,8 +533,99 @@ NOT:
 - styles.css: Modal styles, kbd tag styling
 - popup.js: Modal open/close event handlers
 
+## Favorite Sites Feature (v2.4)
+
+### Overview
+
+"Find or open" behavior — star any tab to save its site as a favorite. When that
+site isn't open, it appears grayed out at the bottom of the popup. Click to open it.
+
+### URL Handling — Domain-Only Matching
+
+Favorites use origin-only URLs (protocol + hostname). Starring a Gmail tab with URL
+`https://mail.google.com/mail/u/0/#inbox/FMfcg...` stores `https://mail.google.com`.
+
+- **Matching:** A favorite is "open" if any tab's URL starts with the stored origin
+- **Opening:** Clicking an unopened favorite navigates to the stored origin
+- **Extraction:** `getUrlOrigin(url)` uses `new URL(url).origin`
+
+### Storage
+
+- `chrome.storage.sync` — syncs favorites across devices
+- Capped at 50 entries (sync quota: 8KB/item, 100KB total)
+- Each entry: `{url, title, favIconUrl}`
+
+### Key Functions
+
+- `loadFavoriteSites()` / `saveFavoriteSites()` — sync storage read/write
+- `getUrlOrigin(url)` — extracts protocol + hostname
+- `isFavoriteUrl(url)` — checks if URL's origin matches any favorite
+- `addFavorite(tab, event)` — star a tab (stores origin)
+- `removeFavorite(url, event)` — remove from favorites
+- `openFavoriteSite(site, event)` — open favorite in new tab
+- `renderFavoriteSites()` — render unopened favorites section
+- `createFavoriteSiteElement(site)` — DOM element for grayed-out favorite
+- `updateFavoritesCount()` — update count in toggle button
+
+### Star Button on Open Tabs
+
+Added in `createTabElement()`:
+- ☆ (empty) if not favorited, ★ (filled) if favorited
+- Hidden by default, visible on hover (like close button)
+- Click toggles favorite status via `addFavorite()` / `removeFavorite()`
+
+### Visual Presentation
+
+- Gold/amber theme (#FFC107 border, #fffbf0 background)
+- Opacity 0.7 (grayed out like recently closed)
+- Section appears AFTER recently closed (always last)
+- Hidden when non-Favorites chip filters are active
+
+## Filter Chips Feature (v2.4)
+
+### Overview
+
+Row of toggle pill buttons above the search box (always visible, not inside
+collapsible controls). Quick way to filter open tabs by type.
+
+### Available Chips
+
+| Chip | Filter Logic | Notes |
+|------|-------------|-------|
+| Duplicates | `urlCounts[tab.url] > 1` | Replaced old "Show Only Duplicates" button |
+| Audio | `tab.audible \|\| tab.mutedInfo?.muted` | Tabs playing or muting sound |
+| Pinned | `tab.pinned` | Pinned tabs only |
+| Favorites | `isFavoriteUrl(tab.url)` | Tabs whose origin is in favorites list |
+| Stale (1w+) | `Date.now() - tab.lastAccessed > 7 days` | Tabs not accessed in over a week |
+
+### Single-Select vs AND Mode
+
+- **Default (single-select):** Clicking a chip deselects all others
+- **AND mode:** Check the "AND" checkbox to combine multiple chips
+- Switching from AND to single-select keeps only the first active chip
+- `clearFilters()` resets all chips and AND mode
+
+### Section Visibility Rules
+
+When any chip is active:
+- Recently closed section: hidden (chips only filter open tabs)
+- Favorite sites section: hidden, UNLESS Favorites chip is active
+
+### Implementation
+
+- Chips rendered in `popup.html` as `.filter-chip` buttons with `data-filter` attribute
+- Event listeners in DOMContentLoaded iterate `.filter-chip` elements
+- Each chip toggles its state variable and calls `renderTabs()`
+- `anyChipFilterActive()` helper used by `renderRecentlyClosedTabs()` and `renderFavoriteSites()`
+
+### UI Changes from Previous Versions
+
+- Removed "Show Only Duplicates" button (replaced by Duplicates chip)
+- Controls section now contains: Close Duplicates, Show Recently Closed, Sort dropdown, Clear Filters, Global sort checkbox
+
 ## Version History
 
+- **v2.4** - Favorite Sites + Filter Chips (domain-level favorites, 5 filter chip types, single/AND mode)
 - **v2.3** - Keyboard shortcuts for tab navigation + clickable help modal
 - **v2.2** - Recently Closed Tabs + Enhanced Default Sorting (group-recent mode)
 - **v2.1** - Visit counts, collapsible UI, wider popup
