@@ -97,7 +97,6 @@ h1 {
   margin-bottom: 12px;
 }
 
-.duplicate-toggle,
 .close-duplicates-btn {
   flex: 1;  /* Equal width buttons */
   padding: 8px 12px;
@@ -107,22 +106,6 @@ h1 {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
-}
-
-/* Toggle button - Grey when inactive, blue when active */
-.duplicate-toggle {
-  background: #f8f9fa;
-  color: #5f6368;
-}
-
-.duplicate-toggle:hover {
-  background: #e8eaed;
-}
-
-.duplicate-toggle.active {
-  background: #1A73E8;  /* Blue when filter is on */
-  color: white;
-  border-color: #1A73E8;
 }
 
 /* Close duplicates button - Orange to indicate destructive action */
@@ -798,6 +781,158 @@ h1 {
   background: #80868b;
   color: white;
   border-color: #80868b;
+}
+
+/*
+ * ============================================================================
+ * FILTER CHIPS
+ * ============================================================================
+ * Row of small toggle pills above the search box for quick filtering.
+ * Always visible (not inside the collapsible controls section).
+ */
+
+.filter-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.filter-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.combine-filters-label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: #80868b;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.combine-filters-checkbox {
+  margin: 0;
+  cursor: pointer;
+}
+
+.combine-filters-label:hover {
+  color: #5f6368;
+}
+
+.filter-chip {
+  padding: 4px 10px;
+  border: 1px solid #dadce0;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  background: #fff;
+  color: #5f6368;
+  transition: all 0.2s;
+}
+
+.filter-chip:hover {
+  background: #f1f3f4;
+  border-color: #ccc;
+}
+
+.filter-chip.active {
+  background: #1A73E8;
+  color: white;
+  border-color: #1A73E8;
+}
+
+.filter-chip.active:hover {
+  background: #1765CC;
+  border-color: #1765CC;
+}
+
+/*
+ * ============================================================================
+ * FAVORITE SITES
+ * ============================================================================
+ * Grayed-out section showing favorite URLs not currently open.
+ * Appears after recently closed tabs (always last).
+ */
+
+.favorite-sites-container {
+  margin-bottom: 12px;
+}
+
+.favorite-sites-header {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #B8860B;
+  background-color: #fffbf0;
+  border-left: 3px solid #FFC107;
+}
+
+.favorite-sites-header .tab-count {
+  color: #B8860B;
+  opacity: 0.8;
+  margin-left: 4px;
+}
+
+/* Favorite site styling - grayed out with gold accent */
+.tab-item.favorite-site {
+  opacity: 0.7;
+  background: #fffbf0;
+  border-left-color: #FFC107;
+}
+
+.tab-item.favorite-site:hover {
+  opacity: 0.9;
+  background: #fff8e1;
+  cursor: pointer;
+}
+
+/* Star button for adding/removing favorites on open tabs */
+.favorite-btn {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: none;
+  color: #FFC107;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.tab-item:hover .favorite-btn {
+  opacity: 0.5;
+}
+
+.favorite-btn:hover {
+  opacity: 1 !important;
+  transform: scale(1.15);
+}
+
+.favorite-btn.favorited {
+  opacity: 0.7;
+  color: #FFA000;
+}
+
+.tab-item:hover .favorite-btn.favorited {
+  opacity: 1;
 }
 
 /*

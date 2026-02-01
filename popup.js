@@ -60,6 +60,21 @@ let closedTabsVisible = localStorage.getItem('closedTabsVisible') === 'true';
 // Collapsed state for filter/sort controls section (persisted in localStorage)
 let controlsCollapsed = localStorage.getItem('controlsCollapsed') === 'true';
 
+// Favorite sites - stored in chrome.storage.sync for cross-device sync
+// Each entry: {url: "https://mail.google.com", title: "Gmail", favIconUrl: "..."}
+// URL is origin-only (protocol + hostname) for domain-level matching
+let favoriteSites = [];
+
+// Filter chip states (all default to false)
+let audioFilterActive = false;
+let pinnedFilterActive = false;
+let favoritesFilterActive = false;
+let oldTabsFilterActive = false;
+
+// When true, multiple chip filters are ANDed together
+// When false (default), clicking a chip deselects others (single-select mode)
+let combineFiltersMode = false;
+
 /*
  * ============================================================================
  * TAB ORGANIZATION
@@ -555,33 +570,21 @@ function renderTabs(searchTerm = '') {
   const organized = organizeTabsByGroup(allTabs, allGroups);
   const lowerSearch = searchTerm.toLowerCase();
 
-  // Search filter: Check if tab matches search term
-  const matchesSearch = (tab) => {
-    if (!searchTerm) return true;
-    return tab.title.toLowerCase().includes(lowerSearch) ||
-           tab.url.toLowerCase().includes(lowerSearch);
-  };
-
-  // Duplicate filter: Check if tab is a duplicate (URL appears >1 time)
-  const matchesDuplicateFilter = (tab) => {
-    if (!duplicateFilterActive) return true;
-    return urlCounts[tab.url] > 1;
-  };
-
   // Combined filter: Tab must match all active filters
+  // Uses the shared tabMatchesFilters() which includes search, duplicates,
+  // group filter, and all filter chip conditions (audio, pinned, faves, old)
   const matchesAllFilters = (tab) => {
-    return matchesSearch(tab) && matchesDuplicateFilter(tab);
+    return tabMatchesFilters(tab);
   };
 
   // Check if duplicate filter should be auto-disabled
+  // Only checks if any duplicates exist at all (ignores other chip filters)
   if (duplicateFilterActive) {
-    const visibleTabs = allTabs.filter(matchesAllFilters);
-    if (visibleTabs.length === 0) {
-      // No duplicates remaining - auto-disable filter
+    const hasDupes = allTabs.some(tab => urlCounts[tab.url] > 1);
+    if (!hasDupes) {
       duplicateFilterActive = false;
-      const toggleBtn = document.getElementById('duplicateToggle');
-      toggleBtn.classList.remove('active');
-      // Re-render without the duplicate filter
+      const dupesChip = document.querySelector('.filter-chip[data-filter="dupes"]');
+      if (dupesChip) dupesChip.classList.remove('active');
       renderTabs(searchTerm);
       return;
     }
@@ -739,8 +742,11 @@ function renderTabs(searchTerm = '') {
     tabList.appendChild(ungroupedContainer);
   }
 
-  // Render recently closed tabs (always LAST)
+  // Render recently closed tabs
   renderRecentlyClosedTabs();
+
+  // Render favorite sites (always LAST - after recently closed)
+  renderFavoriteSites();
 }
 
 /**
@@ -801,6 +807,108 @@ function renderRecentlyClosedTabs() {
 
   // Append at the END of tabList (after all groups/ungrouped)
   tabList.appendChild(closedContainer);
+}
+
+/**
+ * Renders favorite sites section.
+ * Always appears LAST (after recently closed tabs).
+ *
+ * Only shows favorites whose origin does NOT match any currently open tab.
+ * Respects search filter (title/URL match).
+ */
+function renderFavoriteSites() {
+  if (favoriteSites.length === 0) {
+    return;
+  }
+
+  const tabList = document.getElementById('tabList');
+
+  // Build set of open origins for matching
+  const openOrigins = new Set(allTabs.map(t => getUrlOrigin(t.url)));
+
+  // Filter to only unopened favorites
+  let unopenedFavorites = favoriteSites.filter(fav => !openOrigins.has(fav.url));
+
+  // Apply search filter
+  if (currentSearchTerm) {
+    const lowerSearch = currentSearchTerm.toLowerCase();
+    unopenedFavorites = unopenedFavorites.filter(fav =>
+      fav.title.toLowerCase().includes(lowerSearch) ||
+      fav.url.toLowerCase().includes(lowerSearch)
+    );
+  }
+
+  if (unopenedFavorites.length === 0) return;
+
+  // Create container
+  const container = document.createElement('div');
+  container.className = 'favorite-sites-container';
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'favorite-sites-header';
+
+  const headerText = document.createElement('span');
+  headerText.textContent = 'Favorite Sites';
+  header.appendChild(headerText);
+
+  const countSpan = document.createElement('span');
+  countSpan.className = 'tab-count';
+  countSpan.textContent = ` (${unopenedFavorites.length})`;
+  header.appendChild(countSpan);
+
+  container.appendChild(header);
+
+  // Render each favorite
+  unopenedFavorites.forEach(site => {
+    const element = createFavoriteSiteElement(site);
+    container.appendChild(element);
+  });
+
+  tabList.appendChild(container);
+}
+
+/**
+ * Creates a DOM element for a favorite site (not currently open).
+ *
+ * @param {Object} site - Favorite site {url, title, favIconUrl}
+ * @returns {HTMLElement} Favorite site element
+ */
+function createFavoriteSiteElement(site) {
+  const tabItem = document.createElement('div');
+  tabItem.className = 'tab-item favorite-site';
+  tabItem.title = `${site.title}\n${site.url}\n\nClick to open`;
+
+  // Favicon
+  const favicon = document.createElement('img');
+  favicon.className = 'favicon';
+  favicon.src = site.favIconUrl || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><text y="12" font-size="12">⭐</text></svg>';
+  favicon.onerror = () => {
+    favicon.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><text y="12" font-size="12">⭐</text></svg>';
+  };
+  tabItem.appendChild(favicon);
+
+  // Title
+  const titleSpan = document.createElement('span');
+  titleSpan.className = 'tab-title';
+  titleSpan.textContent = site.title;
+  tabItem.appendChild(titleSpan);
+
+  // Remove button (hidden by default, appears on hover)
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'close-btn';
+  removeBtn.textContent = '×';
+  removeBtn.title = 'Remove from favorites';
+  removeBtn.addEventListener('click', (e) => removeFavorite(site.url, e));
+  tabItem.appendChild(removeBtn);
+
+  // Click row to open
+  tabItem.addEventListener('click', (e) => {
+    if (e.target === removeBtn) return;
+    openFavoriteSite(site, e);
+  });
+
+  return tabItem;
 }
 
 /**
@@ -925,6 +1033,21 @@ function createTabElement(tab, groupColor = null, groupTitle = null) {
     tabItem.appendChild(visitBadge);
   }
 
+  // Favorite star button (hidden by default, appears on hover)
+  const isFav = isFavoriteUrl(tab.url);
+  const favBtn = document.createElement('button');
+  favBtn.className = 'favorite-btn' + (isFav ? ' favorited' : '');
+  favBtn.textContent = isFav ? '★' : '☆';
+  favBtn.title = isFav ? 'Remove from favorites' : 'Add to favorites';
+  favBtn.addEventListener('click', (e) => {
+    if (isFavoriteUrl(tab.url)) {
+      removeFavorite(getUrlOrigin(tab.url), e);
+    } else {
+      addFavorite(tab, e);
+    }
+  });
+  tabItem.appendChild(favBtn);
+
   // Close button (hidden by default, appears on hover)
   const closeBtn = document.createElement('button');
   closeBtn.className = 'close-btn';
@@ -935,7 +1058,7 @@ function createTabElement(tab, groupColor = null, groupTitle = null) {
   // Click tab to activate it (but not when clicking action buttons)
   tabItem.addEventListener('click', (e) => {
     // Don't activate tab when clicking action buttons
-    if (e.target === closeBtn || e.target === pinnedBadge || e.target === audioBadge) {
+    if (e.target === closeBtn || e.target === pinnedBadge || e.target === audioBadge || e.target === favBtn) {
       return;
     }
     activateTab(tab.id, tab.windowId);
@@ -1031,8 +1154,9 @@ function createClosedTabElement(closedTab) {
 function toggleDuplicateFilter() {
   duplicateFilterActive = !duplicateFilterActive;
 
-  const toggleBtn = document.getElementById('duplicateToggle');
-  toggleBtn.classList.toggle('active', duplicateFilterActive);
+  // Sync the chip UI
+  const dupesChip = document.querySelector('.filter-chip[data-filter="dupes"]');
+  if (dupesChip) dupesChip.classList.toggle('active', duplicateFilterActive);
 
   renderTabs(currentSearchTerm);
 }
@@ -1055,11 +1179,25 @@ function clearFilters() {
 
   // Clear duplicate filter
   duplicateFilterActive = false;
-  const duplicateToggle = document.getElementById('duplicateToggle');
-  duplicateToggle.classList.remove('active');
 
   // Clear group filter
   activeGroupFilter = null;
+
+  // Clear filter chip states
+  audioFilterActive = false;
+  pinnedFilterActive = false;
+  favoritesFilterActive = false;
+  oldTabsFilterActive = false;
+
+  // Reset all chip UI
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.classList.remove('active');
+  });
+
+  // Reset combine mode
+  combineFiltersMode = false;
+  const combineToggle = document.getElementById('combineFiltersToggle');
+  if (combineToggle) combineToggle.checked = false;
 
   // Reset sort to default
   currentSortOption = 'default';
@@ -1111,6 +1249,29 @@ function tabMatchesFilters(tab) {
   // Group filter (only show tabs in selected group)
   if (activeGroupFilter !== null && tab.groupId !== activeGroupFilter) {
     return false;
+  }
+
+  // Audio filter (only show tabs playing sound or muted)
+  if (audioFilterActive && !tab.audible && !tab.mutedInfo?.muted) {
+    return false;
+  }
+
+  // Pinned filter (only show pinned tabs)
+  if (pinnedFilterActive && !tab.pinned) {
+    return false;
+  }
+
+  // Favorites filter (only show tabs whose origin is in favorites)
+  if (favoritesFilterActive && !isFavoriteUrl(tab.url)) {
+    return false;
+  }
+
+  // Old tabs filter (only show tabs not accessed in >1 week)
+  if (oldTabsFilterActive) {
+    const oneWeek = 7 * 24 * 60 * 60 * 1000;
+    if ((Date.now() - (tab.lastAccessed || 0)) <= oneWeek) {
+      return false;
+    }
   }
 
   return true;
@@ -1252,6 +1413,128 @@ async function loadRecentlyClosedTabs() {
 }
 
 /**
+ * Loads favorite sites from chrome.storage.sync.
+ * Favorites are stored as origin-only URLs for domain-level matching.
+ * Capped at 50 entries to stay within sync storage quota.
+ */
+async function loadFavoriteSites() {
+  try {
+    const stored = await chrome.storage.sync.get('favoriteSites');
+    favoriteSites = stored.favoriteSites || [];
+  } catch (error) {
+    console.warn('Failed to load favorite sites:', error);
+    favoriteSites = [];
+  }
+}
+
+/**
+ * Saves favorite sites to chrome.storage.sync.
+ * Enforces a cap of 50 favorites to stay within sync storage quota (100KB total).
+ */
+async function saveFavoriteSites() {
+  // Cap at 50 favorites
+  if (favoriteSites.length > 50) {
+    favoriteSites = favoriteSites.slice(0, 50);
+  }
+  try {
+    await chrome.storage.sync.set({ favoriteSites });
+  } catch (error) {
+    console.warn('Failed to save favorite sites:', error);
+  }
+}
+
+/**
+ * Extracts the origin (protocol + hostname) from a URL.
+ * Used for domain-level matching of favorites.
+ * Example: "https://mail.google.com/mail/u/0/#inbox/abc" → "https://mail.google.com"
+ *
+ * @param {string} url - Full URL
+ * @returns {string} Origin (protocol + hostname), or original URL if parsing fails
+ */
+function getUrlOrigin(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.origin;
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * Updates the favorites count display in the toggle button.
+ * Shows count of unopened favorites (favorites not currently open in any tab).
+ */
+function updateFavoritesCount() {
+  const openOrigins = new Set(allTabs.map(t => getUrlOrigin(t.url)));
+  const unopenedFavCount = favoriteSites.filter(fav => !openOrigins.has(fav.url)).length;
+  const favCountEl = document.getElementById('favoriteSitesCount');
+  if (favCountEl) {
+    favCountEl.textContent = unopenedFavCount;
+  }
+}
+
+/**
+ * Checks if a URL matches any favorite site (domain-level matching).
+ *
+ * @param {string} url - Full tab URL
+ * @returns {boolean} True if URL's origin matches a stored favorite
+ */
+function isFavoriteUrl(url) {
+  const origin = getUrlOrigin(url);
+  return favoriteSites.some(fav => fav.url === origin);
+}
+
+/**
+ * Adds a tab as a favorite site. Stores origin-only URL.
+ *
+ * @param {Object} tab - Chrome tab object
+ * @param {Event} event - Click event
+ */
+async function addFavorite(tab, event) {
+  event.stopPropagation();
+  const origin = getUrlOrigin(tab.url);
+
+  // Don't add duplicates
+  if (favoriteSites.some(fav => fav.url === origin)) return;
+
+  favoriteSites.push({
+    url: origin,
+    title: tab.title || origin,
+    favIconUrl: tab.favIconUrl || ''
+  });
+
+  await saveFavoriteSites();
+  updateFavoritesCount();
+  renderTabs(currentSearchTerm);
+}
+
+/**
+ * Removes a favorite site by URL.
+ *
+ * @param {string} url - Origin URL to remove
+ * @param {Event} event - Click event
+ */
+async function removeFavorite(url, event) {
+  event.stopPropagation();
+  favoriteSites = favoriteSites.filter(fav => fav.url !== url);
+  await saveFavoriteSites();
+  updateFavoritesCount();
+  renderTabs(currentSearchTerm);
+}
+
+/**
+ * Opens a favorite site in a new tab.
+ *
+ * @param {Object} site - Favorite site object {url, title, favIconUrl}
+ * @param {Event} event - Click event
+ */
+async function openFavoriteSite(site, event) {
+  event.stopPropagation();
+  await chrome.tabs.create({ url: site.url });
+  await loadTabs();
+}
+
+/**
  * Loads all tabs and groups from Chrome, updates UI.
  *
  * This is the main data refresh function, called:
@@ -1287,6 +1570,9 @@ async function loadTabs() {
   // Load recently closed tabs
   await loadRecentlyClosedTabs();
 
+  // Load favorite sites
+  await loadFavoriteSites();
+
   // Update count displays
   document.getElementById('tabCount').textContent = allTabs.length;
   document.getElementById('groupCount').textContent = allGroups.length;
@@ -1295,6 +1581,14 @@ async function loadTabs() {
   const closedTabsCountEl = document.getElementById('closedTabsCount');
   if (closedTabsCountEl) {
     closedTabsCountEl.textContent = recentlyClosedTabs.length;
+  }
+
+  // Update favorites count - show only unopened favorites
+  const openOrigins = new Set(allTabs.map(t => getUrlOrigin(t.url)));
+  const unopenedFavCount = favoriteSites.filter(fav => !openOrigins.has(fav.url)).length;
+  const favCountEl = document.getElementById('favoriteSitesCount');
+  if (favCountEl) {
+    favCountEl.textContent = unopenedFavCount;
   }
 
   // Enable/disable "Close Duplicates" button based on whether duplicates exist
@@ -1393,9 +1687,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Auto-focus search box on popup open
   searchBox.focus();
 
-  // Toggle "Show Only Duplicates" filter
-  document.getElementById('duplicateToggle').addEventListener('click', toggleDuplicateFilter);
-
   // "Close Duplicates" button
   document.getElementById('closeDuplicatesBtn').addEventListener('click', closeDuplicateTabs);
 
@@ -1410,6 +1701,77 @@ document.addEventListener('DOMContentLoaded', () => {
     closedTabsToggle.classList.toggle('active', closedTabsVisible);
     renderTabs(currentSearchTerm);
   });
+
+  // Filter chips - each toggles a filter and re-renders
+  const chipFilterMap = {
+    dupes: () => duplicateFilterActive,
+    audio: () => audioFilterActive,
+    pinned: () => pinnedFilterActive,
+    faves: () => favoritesFilterActive,
+    old: () => oldTabsFilterActive
+  };
+
+  const setChipFilter = (name, value) => {
+    switch (name) {
+      case 'dupes': duplicateFilterActive = value; break;
+      case 'audio': audioFilterActive = value; break;
+      case 'pinned': pinnedFilterActive = value; break;
+      case 'faves': favoritesFilterActive = value; break;
+      case 'old': oldTabsFilterActive = value; break;
+    }
+  };
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const filter = chip.dataset.filter;
+      const wasActive = chipFilterMap[filter]();
+
+      if (!combineFiltersMode) {
+        // Single-select: deactivate all other chips first
+        document.querySelectorAll('.filter-chip').forEach(c => {
+          c.classList.remove('active');
+        });
+        // Clear all chip filter states
+        duplicateFilterActive = false;
+        audioFilterActive = false;
+        pinnedFilterActive = false;
+        favoritesFilterActive = false;
+        oldTabsFilterActive = false;
+      }
+
+      // Toggle the clicked chip
+      setChipFilter(filter, !wasActive);
+      chip.classList.toggle('active', !wasActive);
+
+      renderTabs(currentSearchTerm);
+    });
+  });
+
+  // Combine filters toggle
+  const combineToggle = document.getElementById('combineFiltersToggle');
+  if (combineToggle) {
+    combineToggle.addEventListener('change', (e) => {
+      combineFiltersMode = e.target.checked;
+      if (!combineFiltersMode) {
+        // Switching to single-select: keep only the first active chip
+        const activeChips = document.querySelectorAll('.filter-chip.active');
+        if (activeChips.length > 1) {
+          const keepFilter = activeChips[0].dataset.filter;
+          // Clear all
+          document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+          duplicateFilterActive = false;
+          audioFilterActive = false;
+          pinnedFilterActive = false;
+          favoritesFilterActive = false;
+          oldTabsFilterActive = false;
+          // Re-activate just the first one
+          setChipFilter(keepFilter, true);
+          activeChips[0].classList.add('active');
+          renderTabs(currentSearchTerm);
+        }
+      }
+    });
+  }
 
   // Sort dropdown - Save preference, show/hide global sort checkbox, and re-render
   document.getElementById('sortDropdown').addEventListener('change', (e) => {

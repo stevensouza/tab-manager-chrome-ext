@@ -24,11 +24,8 @@
     <!-- Collapsible controls section -->
     <div id="controlsSection" class="controls-section collapsed">
 
-    <!-- Duplicate management controls -->
+    <!-- Action buttons and section toggles -->
     <div class="duplicate-controls">
-      <!-- Toggle button to show only duplicate tabs (tabs with same URL) -->
-      <button id="duplicateToggle" class="duplicate-toggle">Show Only Duplicates</button>
-
       <!-- Button to close all duplicate tabs (keeps one of each URL) -->
       <button id="closeDuplicatesBtn" class="close-duplicates-btn">Close Duplicates</button>
 
@@ -67,6 +64,21 @@
     </div>
 
     </div> <!-- End collapsible controls section -->
+
+    <!-- Filter chips - always visible, quick toggle filters -->
+    <div class="filter-chips-row">
+      <div class="filter-chips">
+        <button class="filter-chip" data-filter="dupes" title="Show only tabs with duplicate URLs">Duplicates</button>
+        <button class="filter-chip" data-filter="audio" title="Show only tabs playing or muting audio">Audio</button>
+        <button class="filter-chip" data-filter="pinned" title="Show only pinned tabs">Pinned</button>
+        <button class="filter-chip" data-filter="faves" title="Show only favorited sites">Favorites</button>
+        <button class="filter-chip" data-filter="old" title="Show only tabs not accessed in over a week">Stale (1w+)</button>
+      </div>
+      <label class="combine-filters-label" title="When checked, multiple filters are combined (AND logic)">
+        <input type="checkbox" id="combineFiltersToggle" class="combine-filters-checkbox">
+        <span>AND</span>
+      </label>
+    </div>
 
     <!-- Search box for filtering tabs by title, URL, or group name (always visible) -->
     <input type="text" id="searchBox" class="search-box" placeholder="Search tabs and groups...">
