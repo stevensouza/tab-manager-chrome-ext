@@ -53,6 +53,14 @@ Tab Manager - A Chrome extension (Manifest V3) for managing browser tabs with gr
 ### Core Data Flow (popup.js)
 
 ```
+DOMContentLoaded
+  ↓
+  - Restores persisted state from localStorage (v2.4+):
+    - Search term (tabManagerSearchTerm)
+    - Chip filter states (tabManagerChipState)
+    - Sort option, global sort, closed tabs visibility
+  - Calls loadTabs()
+
 loadTabs()
   ↓
   - Fetches allTabs (chrome.tabs.query)
@@ -75,6 +83,7 @@ renderTabs(searchTerm)
   - Renders ungrouped tabs
   - Renders recently closed tabs (renderRecentlyClosedTabs) - hidden when chips active
   - Renders favorite sites (renderFavoriteSites) - ALWAYS LAST, hidden when non-Faves chips active
+    - Compares exact URLs (not origins) to determine if favorite is open
 ```
 
 ### State Management (Global Variables in popup.js)
@@ -82,21 +91,21 @@ renderTabs(searchTerm)
 ```javascript
 allTabs = []              // All browser tabs
 allGroups = []            // All tab groups
-activeGroupFilter = null  // Currently filtered group ID (null = show all)
+activeGroupFilter = null  // Currently filtered group ID (null = show all) - NOT persisted
 activeTabId = null        // ID of active tab (for highlighting)
 urlCounts = {}            // Map of URL → count (for duplicate detection)
 visitCounts = {}          // Map of URL → visit count (from history)
-currentSearchTerm = ''    // Current search filter text
-duplicateFilterActive = false  // Duplicates chip state
-currentSortOption = 'group-recent'  // Default sort mode (v2.2+)
+currentSearchTerm = ''    // Current search filter text - PERSISTED to localStorage
+duplicateFilterActive = false  // Duplicates chip state - PERSISTED to localStorage
+currentSortOption = 'group-recent'  // Default sort mode (v2.2+) - PERSISTED to localStorage
 recentlyClosedTabs = []   // Recently closed tabs from sessions API
-closedTabsVisible = false // Toggle state for closed tabs section
+closedTabsVisible = false // Toggle state for closed tabs section - PERSISTED to localStorage
 favoriteSites = []        // Favorite sites from chrome.storage.sync
-audioFilterActive = false // Audio chip state
-pinnedFilterActive = false // Pinned chip state
-favoritesFilterActive = false // Favorites chip state
-oldTabsFilterActive = false // Stale (1w+) chip state
-combineFiltersMode = false // AND mode for chips (default: single-select)
+audioFilterActive = false // Audio chip state - PERSISTED to localStorage
+pinnedFilterActive = false // Pinned chip state - PERSISTED to localStorage
+favoritesFilterActive = false // Favorites chip state - PERSISTED to localStorage
+oldTabsFilterActive = false // Stale (1w+) chip state - PERSISTED to localStorage
+combineFiltersMode = false // AND mode for chips (default: single-select) - PERSISTED to localStorage
 ```
 
 ### Filter Logic - Critical Implementation Detail
@@ -519,19 +528,24 @@ NOT:
 - **Single tab:** Commands return early gracefully
 - **Multi-window:** Independent navigation per window
 
-### Help Modal (v2.3)
+### Help Modal (v2.3+)
 
 **Clickable info icon (ℹ️):**
 - Removed tooltip (was confusing with delay)
 - Click to open modal with:
   - Keyboard shortcuts table
   - Border color legend (tab age)
-  - Link to chrome://extensions/shortcuts
+  - Button to open chrome://extensions/shortcuts
+
+**chrome:// link handling (v2.4):**
+- Direct links to `chrome://` URLs don't work in extensions
+- Button uses `chrome.tabs.create({url: 'chrome://extensions/shortcuts'})` instead
+- Opens shortcuts page in new tab when clicked
 
 **Files modified:**
-- popup.html: Modal HTML structure
+- popup.html: Modal HTML structure, shortcuts button
 - styles.css: Modal styles, kbd tag styling
-- popup.js: Modal open/close event handlers
+- popup.js: Modal open/close event handlers, shortcuts button handler
 
 ## Favorite Sites Feature (v2.4)
 
@@ -540,14 +554,15 @@ NOT:
 "Find or open" behavior — star any tab to save its site as a favorite. When that
 site isn't open, it appears grayed out at the bottom of the popup. Click to open it.
 
-### URL Handling — Domain-Only Matching
+### URL Handling — Full-URL Matching (Bookmark-Style)
 
-Favorites use origin-only URLs (protocol + hostname). Starring a Gmail tab with URL
-`https://mail.google.com/mail/u/0/#inbox/FMfcg...` stores `https://mail.google.com`.
+Favorites store the exact full URL (like bookmarks). Starring a Gmail tab with URL
+`https://mail.google.com/mail/u/0/#inbox/FMfcg...` stores that complete URL.
 
-- **Matching:** A favorite is "open" if any tab's URL starts with the stored origin
-- **Opening:** Clicking an unopened favorite navigates to the stored origin
-- **Extraction:** `getUrlOrigin(url)` uses `new URL(url).origin`
+- **Matching:** A favorite is "open" if any tab has the exact same URL
+- **Opening:** Clicking an unopened favorite navigates to the exact stored URL
+- **Behavior:** Starring one Google Doc doesn't mark all Google Docs as favorited
+- **Note:** `getUrlOrigin(url)` helper function exists but is no longer used for favorites
 
 ### Storage
 
@@ -558,9 +573,9 @@ Favorites use origin-only URLs (protocol + hostname). Starring a Gmail tab with 
 ### Key Functions
 
 - `loadFavoriteSites()` / `saveFavoriteSites()` — sync storage read/write
-- `getUrlOrigin(url)` — extracts protocol + hostname
-- `isFavoriteUrl(url)` — checks if URL's origin matches any favorite
-- `addFavorite(tab, event)` — star a tab (stores origin)
+- `getUrlOrigin(url)` — extracts protocol + hostname (helper, not used for favorites)
+- `isFavoriteUrl(url)` — checks if exact URL matches any favorite
+- `addFavorite(tab, event)` — star a tab (stores full URL)
 - `removeFavorite(url, event)` — remove from favorites
 - `openFavoriteSite(site, event)` — open favorite in new tab
 - `renderFavoriteSites()` — render unopened favorites section
@@ -595,7 +610,7 @@ collapsible controls). Quick way to filter open tabs by type.
 | Duplicates | `urlCounts[tab.url] > 1` | Replaced old "Show Only Duplicates" button |
 | Audio | `tab.audible \|\| tab.mutedInfo?.muted` | Tabs playing or muting sound |
 | Pinned | `tab.pinned` | Pinned tabs only |
-| Favorites | `isFavoriteUrl(tab.url)` | Tabs whose origin is in favorites list |
+| Favorites | `isFavoriteUrl(tab.url)` | Tabs whose exact URL is in favorites list |
 | Stale (1w+) | `Date.now() - tab.lastAccessed > 7 days` | Tabs not accessed in over a week |
 
 ### Single-Select vs AND Mode
@@ -623,9 +638,64 @@ When any chip is active:
 - Removed "Show Only Duplicates" button (replaced by Duplicates chip)
 - Controls section now contains: Close Duplicates, Show Recently Closed, Sort dropdown, Clear Filters, Global sort checkbox
 
+## State Persistence (v2.4+)
+
+### Overview
+
+Filter chip states, AND mode, and search text persist to localStorage so they survive closing and reopening the popup. Users don't lose their filtering context between sessions.
+
+### What Gets Persisted
+
+**localStorage keys:**
+- `tabManagerChipState` — JSON object with all chip states and AND mode
+- `tabManagerSearchTerm` — Current search box text
+- `tabManagerSortOption` — Sort dropdown selection (existed pre-v2.4)
+- `tabManagerGlobalSort` — Global sort checkbox state (existed pre-v2.4)
+- `tabManagerClosedTabsVisible` — Recently closed section visibility (existed pre-v2.4)
+
+**Chip state structure:**
+```javascript
+{
+  dupes: boolean,      // Duplicates chip
+  audio: boolean,      // Audio chip
+  pinned: boolean,     // Pinned chip
+  faves: boolean,      // Favorites chip
+  old: boolean,        // Stale (1w+) chip
+  combine: boolean     // AND mode toggle
+}
+```
+
+### Key Functions
+
+- `saveChipState()` — Saves chip filter states to localStorage
+- `restoreChipState()` — Restores chip states on popup open
+- Called automatically on DOMContentLoaded and whenever filters change
+
+### Implementation Details
+
+**Save triggers:**
+- Clicking any filter chip
+- Toggling AND mode checkbox
+- Clearing filters (saves empty state)
+- Typing in search box (debounced via input event)
+
+**Restore behavior:**
+- On popup open, reads from localStorage
+- Updates global state variables
+- Applies 'active' class to chips
+- Sets checkbox states
+- Populates search box
+- Silently ignores corrupt data
+
+**Note:** Active group filter (clicking group header) is NOT persisted — it resets on popup reopen. This is intentional to avoid confusion if groups change.
+
 ## Version History
 
-- **v2.4** - Favorite Sites + Filter Chips (domain-level favorites, 5 filter chip types, single/AND mode)
+- **v2.4** - Favorite Sites + Filter Chips + State Persistence
+  - Full-URL favorites (bookmark-style, not domain-level)
+  - 5 filter chip types (Duplicates, Audio, Pinned, Favorites, Stale)
+  - Single-select and AND mode for chips
+  - Persist filter/search state to localStorage across popup sessions
 - **v2.3** - Keyboard shortcuts for tab navigation + clickable help modal
 - **v2.2** - Recently Closed Tabs + Enhanced Default Sorting (group-recent mode)
 - **v2.1** - Visit counts, collapsible UI, wider popup
