@@ -642,6 +642,9 @@ function renderTabs(searchTerm = '') {
       tabList.appendChild(tabElement);
     });
 
+    // Still render recently closed and favorites after the flat list
+    renderRecentlyClosedTabs();
+    renderFavoriteSites();
     return; // Exit early - don't use grouped rendering
   }
 
@@ -764,6 +767,9 @@ function renderRecentlyClosedTabs() {
     return; // Don't render if hidden or empty
   }
 
+  // Hide when any chip filter is active — chips filter open tabs only
+  if (anyChipFilterActive()) return;
+
   const tabList = document.getElementById('tabList');
 
   // Create container (similar to ungrouped-container)
@@ -820,6 +826,9 @@ function renderFavoriteSites() {
   if (favoriteSites.length === 0) {
     return;
   }
+
+  // Hide when any chip filter is active (except Favorites chip — that one should show them)
+  if (anyChipFilterActive() && !favoritesFilterActive) return;
 
   const tabList = document.getElementById('tabList');
 
@@ -1232,6 +1241,14 @@ function clearFilters() {
  * @param {Object} tab - Chrome tab object
  * @returns {boolean} True if tab passes all active filters
  */
+/**
+ * Returns true if any chip filter is currently active.
+ */
+function anyChipFilterActive() {
+  return duplicateFilterActive || audioFilterActive || pinnedFilterActive ||
+         favoritesFilterActive || oldTabsFilterActive;
+}
+
 function tabMatchesFilters(tab) {
   // Search filter
   if (currentSearchTerm) {
@@ -1493,7 +1510,6 @@ function isFavoriteUrl(url) {
 async function addFavorite(tab, event) {
   event.stopPropagation();
   const origin = getUrlOrigin(tab.url);
-
   // Don't add duplicates
   if (favoriteSites.some(fav => fav.url === origin)) return;
 
