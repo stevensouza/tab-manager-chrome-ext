@@ -56,10 +56,18 @@ This Chrome extension helps you manage browser tabs with features like search, f
 - **AND mode** - Check "AND" checkbox to combine multiple filters
 - **Clean results** - Recently closed and favorites sections hidden when filtering
 
+### 📂 Collapsible Groups & View Toggle (v2.5)
+- **Accordion groups** - Click any group header to collapse/expand its tabs
+- **Chevron indicator** - ▼ (expanded) / ▶ (collapsed) on group headers
+- **Collapse/Expand All** - Button on search row to toggle all groups at once
+- **[Groups | All] toggle** - Segmented control to switch between grouped and flat views
+- **Search clear button** - X button inside search box for quick clearing
+- **State persisted** - Collapse state and view mode saved to localStorage
+
 ### 🔍 Search & Filter
 - **Real-time search** - Filter tabs by title or URL
 - **Group name search** - Search by tab group names
-- **Group filtering** - Click group headers to filter by specific groups
+- **Search auto-expand** - Collapsed groups auto-expand when they contain search matches
 - **Clear Filters** - One-click button to reset all filters, chips, and sorting
 
 ### 📊 Tab Management
@@ -482,6 +490,15 @@ tab-manager-chrome-ext/
 - Can be removed at any time
 
 ## Changelog
+
+**Version 2.5 (2026-02-06)**
+- 🔍 **NEW:** Search clear X button — clears search text in one click
+- 📂 **NEW:** Accordion collapse/expand for tab groups — click group header, chevron indicator, state persisted
+- 📂 **NEW:** Collapse/Expand All button on search row
+- 🔀 **NEW:** Segmented [Groups | All] view toggle — replaces hidden "Sort globally" checkbox
+- 🔀 **NEW:** Tooltips on Groups/All toggle buttons
+- 🔍 Search auto-expands collapsed groups containing matching tabs
+- 💾 Collapse state and view mode persisted to localStorage
 
 **Version 2.4 (2026-01-31)**
 - ⭐ **NEW:** Favorite Sites - star any tab to save as favorite, unopened favorites shown grayed out at bottom

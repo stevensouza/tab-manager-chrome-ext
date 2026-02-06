@@ -14,11 +14,7 @@
     <p class="subtitle">by Steve Souza & Claude Code (01/26)</p>
 
     <!-- Tab statistics - Updated dynamically by popup.js -->
-    <p class="stats-line">Total groups: <span id="groupCount">0</span> | Total tabs: <span id="tabCount">0</span>
-      <button id="toggleAllGroups" class="toggle-all-groups-btn" title="Collapse/Expand all groups">
-        <span class="toggle-all-icon">&#x25BC;</span>
-      </button>
-    </p>
+    <p class="stats-line">Total groups: <span id="groupCount">0</span> | Total tabs: <span id="tabCount">0</span></p>
 
     <!-- Toggle button for collapsible controls -->
     <button id="toggleControls" class="toggle-controls-btn" title="Show/hide filters and sorting options">
@@ -59,13 +55,6 @@
       <button id="clearFiltersBtn" class="clear-filters-btn">Clear Filters</button>
     </div>
 
-    <!-- Global sort checkbox (only visible when sort is not default) -->
-    <div id="globalSortContainer" class="global-sort-container" style="display: none;">
-      <label class="global-sort-label">
-        <input type="checkbox" id="globalSortCheckbox" class="global-sort-checkbox">
-        <span>Sort globally (across all groups)</span>
-      </label>
-    </div>
 
     </div> <!-- End collapsible controls section -->
 
@@ -84,10 +73,19 @@
       </label>
     </div>
 
-    <!-- Search box for filtering tabs by title, URL, or group name (always visible) -->
-    <div class="search-container">
-      <input type="text" id="searchBox" class="search-box" placeholder="Search tabs and groups...">
-      <button id="searchClearBtn" class="search-clear-btn" title="Clear search" style="display: none;">&times;</button>
+    <!-- Search box + view controls row -->
+    <div class="search-row">
+      <div class="search-container">
+        <input type="text" id="searchBox" class="search-box" placeholder="Search tabs and groups...">
+        <button id="searchClearBtn" class="search-clear-btn" title="Clear search" style="display: none;">&times;</button>
+      </div>
+      <button id="toggleAllGroups" class="collapse-all-btn" title="Collapse/Expand all groups">
+        <span class="toggle-all-icon">&#x25BC;</span>
+      </button>
+      <div class="view-toggle">
+        <button class="view-toggle-btn active" data-view="groups" title="Show tabs organized by groups">Groups</button>
+        <button class="view-toggle-btn" data-view="all" title="Show all tabs in a flat sorted list">All</button>
+      </div>
     </div>
 
     <!-- Main container where tabs and groups are rendered dynamically -->
@@ -121,6 +119,22 @@
           </tr>
         </table>
         <p class="help-note">💡 Customize shortcuts at <button id="openShortcutsBtn" class="shortcuts-link-btn">chrome://extensions/shortcuts</button></p>
+
+        <h3>🔎 Search & View Controls</h3>
+        <table class="help-table">
+          <tr>
+            <td><strong>Groups / All</strong></td>
+            <td><strong>Groups</strong> shows tabs organized under colored group headers. <strong>All</strong> shows a flat sorted list with group badges.</td>
+          </tr>
+          <tr>
+            <td><strong>▼ / ▶</strong> button</td>
+            <td>Collapse or expand all groups at once. Click individual group headers to collapse/expand one group. State is remembered between sessions.</td>
+          </tr>
+          <tr>
+            <td><strong>✕</strong> in search</td>
+            <td>Clears the search text. Searching auto-expands any collapsed groups that contain matching tabs.</td>
+          </tr>
+        </table>
 
         <h3>🎨 Border Colors (Tab Age)</h3>
         <table class="help-table">

@@ -42,15 +42,12 @@ case 'group-recent':
 - **Organized:** Groups alphabetically for easy navigation
 - **Consistent:** Predictable ordering vs. random browser tab order
 
-### Global Sort Disabled
+### View Mode Interaction (v2.5)
 
-Group-recent mode is designed for **per-group sorting only**.
+The global sort checkbox was replaced in v2.5 by a segmented `[Groups | All]` toggle.
 
-Global sort checkbox is hidden when:
-- `currentSortOption === 'default'` (browser tab order)
-- `currentSortOption === 'group-recent'` (NEW)
-
-This prevents user confusion about incompatible modes.
+- **Groups view:** Tabs organized under group headers with per-group sorting. Group-recent mode sorts groups A-Z with recent tabs first within each group.
+- **All view:** Flat sorted list with group badges. All sort options apply globally across all tabs.
 
 ### Dropdown Options
 

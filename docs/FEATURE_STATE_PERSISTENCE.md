@@ -2,7 +2,7 @@
 
 ### Overview
 
-Filter chip states, AND mode, and search text persist to localStorage so they survive closing and reopening the popup. Users don't lose their filtering context between sessions.
+Filter chip states, AND mode, search text, view mode, and group collapse states persist to localStorage so they survive closing and reopening the popup. Users don't lose their filtering context between sessions.
 
 ### What Gets Persisted
 
@@ -10,8 +10,9 @@ Filter chip states, AND mode, and search text persist to localStorage so they su
 - `tabManagerChipState` — JSON object with all chip states and AND mode
 - `tabManagerSearchTerm` — Current search box text
 - `tabManagerSortOption` — Sort dropdown selection (existed pre-v2.4)
-- `tabManagerGlobalSort` — Global sort checkbox state (existed pre-v2.4)
-- `tabManagerClosedTabsVisible` — Recently closed section visibility (existed pre-v2.4)
+- `tabManagerViewMode` — 'groups' or 'all' segmented toggle (v2.5)
+- `tabManagerCollapsedGroups` — JSON array of collapsed group IDs (v2.5)
+- `closedTabsVisible` — Recently closed section visibility (existed pre-v2.4)
 
 **Chip state structure:**
 ```javascript
@@ -47,4 +48,4 @@ Filter chip states, AND mode, and search text persist to localStorage so they su
 - Populates search box
 - Silently ignores corrupt data
 
-**Note:** Active group filter (clicking group header) is NOT persisted — it resets on popup reopen. This is intentional to avoid confusion if groups change.
+**Note:** Group collapse state IS persisted (v2.5), but Chrome reassigns group IDs on browser restart, so stale IDs are cleaned up in `loadTabs()`. After a browser restart, all groups start expanded.

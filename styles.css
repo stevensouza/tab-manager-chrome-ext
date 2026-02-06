@@ -79,24 +79,6 @@ h1 {
   font-weight: 600;
 }
 
-/* Collapse/Expand All toggle button (next to stats) */
-.toggle-all-groups-btn {
-  background: none;
-  border: 1px solid #dadce0;
-  border-radius: 4px;
-  padding: 2px 8px;
-  margin-left: 8px;
-  cursor: pointer;
-  font-size: 10px;
-  color: #5f6368;
-  transition: all 0.2s;
-  vertical-align: middle;
-}
-
-.toggle-all-groups-btn:hover {
-  background: #f1f3f4;
-  border-color: #ccc;
-}
 
 #tabCount {
   font-weight: bold;
@@ -205,35 +187,6 @@ h1 {
   cursor: not-allowed;
 }
 
-/*
- * ============================================================================
- * GLOBAL SORT CHECKBOX
- * ============================================================================
- */
-
-.global-sort-container {
-  margin-bottom: 12px;
-  padding: 8px 12px;
-  background: #f8f9fa;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-}
-
-.global-sort-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: #5f6368;
-  cursor: pointer;
-  user-select: none;
-}
-
-.global-sort-checkbox {
-  cursor: pointer;
-  width: 16px;
-  height: 16px;
-}
 
 /*
  * ============================================================================
@@ -241,9 +194,18 @@ h1 {
  * ============================================================================
  */
 
+/* Search row: search box + collapse-all button + view toggle */
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
 .search-container {
   position: relative;
-  margin-bottom: 12px;
+  flex: 1;
+  min-width: 0;  /* Allow shrinking for flexbox */
 }
 
 .search-box {
@@ -253,6 +215,7 @@ h1 {
   border-radius: 4px;
   font-size: 14px;
   box-sizing: border-box;
+  height: 34px;
 }
 
 .search-box:focus {
@@ -284,6 +247,68 @@ h1 {
 .search-clear-btn:hover {
   background: #dadce0;
   color: #333;
+}
+
+/* Collapse/Expand All button (next to search, before view toggle) */
+.collapse-all-btn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 34px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #f8f9fa;
+  cursor: pointer;
+  font-size: 10px;
+  color: #5f6368;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.collapse-all-btn:hover {
+  background: #e8eaed;
+  border-color: #ccc;
+}
+
+/* Hidden when in All view (no groups to collapse) */
+.collapse-all-btn.hidden {
+  display: none;
+}
+
+/* Segmented view toggle: [Groups | All] */
+.view-toggle {
+  flex-shrink: 0;
+  display: flex;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+  height: 34px;
+}
+
+.view-toggle-btn {
+  border: none;
+  background: #f8f9fa;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #5f6368;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.view-toggle-btn:first-child {
+  border-right: 1px solid #ddd;
+}
+
+.view-toggle-btn:hover:not(.active) {
+  background: #e8eaed;
+}
+
+.view-toggle-btn.active {
+  background: #1A73E8;
+  color: white;
 }
 
 /*

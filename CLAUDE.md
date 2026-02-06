@@ -58,7 +58,7 @@ DOMContentLoaded
   - Restores persisted state from localStorage (v2.4+):
     - Search term (tabManagerSearchTerm)
     - Chip filter states (tabManagerChipState)
-    - Sort option, global sort, closed tabs visibility
+    - Sort option, view mode, closed tabs visibility, collapsed groups
   - Calls loadTabs()
 
 loadTabs()
@@ -78,9 +78,11 @@ renderTabs(searchTerm)
   - Organizes tabs by groups (organizeTabsByGroup)
   - Sorts groups alphabetically (if group-recent mode)
   - Applies filters: search, duplicate, chips (tabMatchesFilters)
-  - Renders group headers with chevron, tab counts, collapse/expand on click
-  - Renders tabs with favicons, badges, star/close buttons (createTabElement)
-  - Renders ungrouped tabs
+  - If viewMode === 'all': renders flat sorted list with group badges
+  - If viewMode === 'groups': renders grouped view:
+    - Group headers with chevron (▶/▼), tab counts, collapse/expand on click
+    - Tabs under each group (hidden when collapsed)
+    - Ungrouped tabs section
   - Renders recently closed tabs (renderRecentlyClosedTabs) - hidden when chips active
   - Renders favorite sites (renderFavoriteSites) - ALWAYS LAST, hidden when non-Faves chips active
     - Compares exact URLs (not origins) to determine if favorite is open
@@ -98,6 +100,7 @@ visitCounts = {}          // Map of URL → visit count (from history)
 currentSearchTerm = ''    // Current search filter text - PERSISTED to localStorage
 duplicateFilterActive = false  // Duplicates chip state - PERSISTED to localStorage
 currentSortOption = 'group-recent'  // Default sort mode (v2.2+) - PERSISTED to localStorage
+viewMode = 'groups'           // 'groups' or 'all' (segmented toggle) - PERSISTED to localStorage
 recentlyClosedTabs = []   // Recently closed tabs from sessions API
 closedTabsVisible = false // Toggle state for closed tabs section - PERSISTED to localStorage
 favoriteSites = []        // Favorite sites from chrome.storage.sync
@@ -295,9 +298,16 @@ Detailed specs are in separate files — read these when modifying a specific fe
 - docs/FEATURE_FAVORITES.md - Favorite Sites (v2.4)
 - docs/FEATURE_FILTER_CHIPS.md - Filter Chips (v2.4)
 - docs/FEATURE_STATE_PERSISTENCE.md - State Persistence (v2.4+)
+- docs/FEATURE_SEARCH_AND_VIEW.md - Search Clear, Accordion Groups, View Toggle (v2.5)
 
 ## Version History
 
+- **v2.5** - Search UX + Accordion Groups + View Toggle
+  - Search clear X button (clears search text in one click)
+  - Accordion collapse/expand for tab groups (click header, chevron indicator, persisted)
+  - Collapse/Expand All button on search row
+  - Segmented [Groups | All] toggle replaces hidden "Sort globally" checkbox
+  - Search auto-expands collapsed groups with matching tabs
 - **v2.4** - Favorite Sites + Filter Chips + State Persistence
   - Full-URL favorites (bookmark-style, not domain-level)
   - 5 filter chip types (Duplicates, Audio, Pinned, Favorites, Stale)

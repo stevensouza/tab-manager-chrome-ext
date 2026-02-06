@@ -48,9 +48,9 @@ let duplicateFilterActive = false;
 // Default is 'group-recent' (groups A→Z, tabs by recent first)
 let currentSortOption = 'group-recent';
 
-// Whether to sort globally (across all groups) or within each group
-// Only applies when currentSortOption is not 'default'
-let globalSortEnabled = false;
+// View mode: 'groups' (default) or 'all' (flat sorted list)
+// Persisted to localStorage
+let viewMode = localStorage.getItem('tabManagerViewMode') || 'groups';
 
 // Recently closed tabs state
 // Loaded from chrome.sessions API + group metadata from chrome.storage
@@ -641,8 +641,8 @@ function renderTabs(searchTerm = '') {
     });
   }
 
-  // GLOBAL SORT MODE: Flatten all tabs and sort globally
-  if (globalSortEnabled && currentSortOption !== 'default' && currentSortOption !== 'group-recent') {
+  // ALL VIEW MODE: Flatten all tabs and sort globally
+  if (viewMode === 'all') {
     // Collect all tabs (grouped and ungrouped) that match filters
     let allFilteredTabs = [];
 
@@ -1261,16 +1261,7 @@ function clearFilters() {
   currentSortOption = 'default';
   const sortDropdown = document.getElementById('sortDropdown');
   sortDropdown.value = 'default';
-
-  // Reset global sort
-  globalSortEnabled = false;
-  const globalSortCheckbox = document.getElementById('globalSortCheckbox');
-  globalSortCheckbox.checked = false;
-  document.getElementById('globalSortContainer').style.display = 'none';
-
-  // Save to localStorage
   localStorage.setItem('tabManagerSortOption', 'default');
-  localStorage.setItem('tabManagerGlobalSort', 'false');
 
   // Re-render with cleared filters
   renderTabs('');
@@ -1763,21 +1754,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('sortDropdown').value = savedSort;
   }
 
-  // Restore saved global sort preference from localStorage
-  const savedGlobalSort = localStorage.getItem('tabManagerGlobalSort');
-  if (savedGlobalSort === 'true') {
-    globalSortEnabled = true;
-    document.getElementById('globalSortCheckbox').checked = true;
-  }
-
   // Restore saved chip filter state from localStorage
   restoreChipState();
 
-  // Show/hide global sort checkbox based on sort option
-  const globalSortContainer = document.getElementById('globalSortContainer');
-  if (currentSortOption !== 'default' && currentSortOption !== 'group-recent') {
-    globalSortContainer.style.display = 'block';
-  }
+  // Initialize view toggle from persisted state
+  const collapseAllBtn = document.getElementById('toggleAllGroups');
+  document.querySelectorAll('.view-toggle-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === viewMode);
+  });
+  // Hide collapse-all button in All view
+  collapseAllBtn.classList.toggle('hidden', viewMode === 'all');
 
   // Initialize collapsible controls state
   const section = document.getElementById('controlsSection');
@@ -1795,13 +1781,28 @@ document.addEventListener('DOMContentLoaded', () => {
   button.addEventListener('click', toggleControls);
 
   // Collapse/Expand All groups toggle
-  document.getElementById('toggleAllGroups').addEventListener('click', () => {
+  collapseAllBtn.addEventListener('click', () => {
     const allCollapsed = allGroups.length > 0 && allGroups.every(g => collapsedGroups.has(g.id));
     if (allCollapsed) {
       expandAllGroups();
     } else {
       collapseAllGroups();
     }
+  });
+
+  // View toggle: Groups vs All
+  document.querySelectorAll('.view-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      viewMode = btn.dataset.view;
+      localStorage.setItem('tabManagerViewMode', viewMode);
+      // Update active button styling
+      document.querySelectorAll('.view-toggle-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.view === viewMode);
+      });
+      // Show/hide collapse-all button (only relevant in groups view)
+      collapseAllBtn.classList.toggle('hidden', viewMode === 'all');
+      renderTabs(currentSearchTerm);
+    });
   });
 
   // Restore saved search term from localStorage
@@ -1929,28 +1930,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Sort dropdown - Save preference, show/hide global sort checkbox, and re-render
+  // Sort dropdown - Save preference and re-render
   document.getElementById('sortDropdown').addEventListener('change', (e) => {
     currentSortOption = e.target.value;
     localStorage.setItem('tabManagerSortOption', currentSortOption);
-
-    // Show/hide global sort checkbox
-    // Hide for default and group-recent modes (designed for per-group sorting)
-    if (currentSortOption === 'default' || currentSortOption === 'group-recent') {
-      globalSortContainer.style.display = 'none';
-      globalSortEnabled = false;
-      document.getElementById('globalSortCheckbox').checked = false;
-    } else {
-      globalSortContainer.style.display = 'block';
-    }
-
-    renderTabs(currentSearchTerm);
-  });
-
-  // Global sort checkbox - Toggle global sorting
-  document.getElementById('globalSortCheckbox').addEventListener('change', (e) => {
-    globalSortEnabled = e.target.checked;
-    localStorage.setItem('tabManagerGlobalSort', globalSortEnabled.toString());
     renderTabs(currentSearchTerm);
   });
 
