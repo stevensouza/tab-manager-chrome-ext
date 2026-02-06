@@ -44,7 +44,7 @@ This Chrome extension helps you manage browser tabs with features like search, f
 
 ### ⭐ Favorite Sites (v2.4)
 - **Star any tab** - Hover to see ☆ button, click to save site as favorite
-- **Domain-level matching** - Stores origin only (e.g., `https://mail.google.com`), ignores paths/session IDs
+- **Full-URL matching** - Stores exact URL (bookmark-style), not just domain
 - **Find or open** - Unopened favorites appear grayed out at bottom of popup, click to open
 - **Cross-device sync** - Favorites stored in `chrome.storage.sync`
 - **Smart visibility** - Favorites disappear from bottom section when the site is open
@@ -81,11 +81,9 @@ This Chrome extension helps you manage browser tabs with features like search, f
 ### 🔄 Sorting
 - **10 sort options** - Groups (A→Z) + Recent First (default), Browser Tab Order, Title (A→Z, Z→A), URL (A→Z, Z→A), Age (Newest/Oldest), Most/Least Visited
 - **Smart default** - Groups alphabetically, tabs by most recent first within each group
-- **Per-group sorting** - Sort tabs within each group (default for most modes)
-- **Global sorting** - Optional checkbox to sort all tabs together across groups (disabled for default modes)
-  - Shows group badges when globally sorted
-  - Persists sort preference across sessions
-- **Persistent preferences** - Remembers your sort choice and global sort setting
+- **Groups view** - Sorts tabs within each group
+- **All view** - Sorts all tabs together in a flat list with group badges
+- **Persistent preferences** - Remembers your sort choice and view mode across sessions
 
 ### ↶ Recently Closed Tabs
 - **Session history** - Track last 25 closed tabs with Chrome sessions API
@@ -130,160 +128,139 @@ This Chrome extension helps you manage browser tabs with features like search, f
 
 ### Default View (Controls Collapsed)
 ```
-┌───────────────────────────────────────────────────────────┐
-│ Tab Manager                                          ℹ️   │
-│ by Steve Souza & Claude Code (01/26)                      │
-│                                                           │
-│ Total groups: 3 | Total tabs: 12                         │
-│                                                           │
-│ [▼ Filters & Sort                                      ]  │ ← Click to expand
-│                                                           │
-│ [Duplicates] [Audio] [Pinned] [Favorites] [Stale(1w+)] ☐AND │ ← Filter chips
-│ ┌───────────────────────────────────────────────────────┐ │
-│ │ Search tabs and groups...                             │ │
-│ └───────────────────────────────────────────────────────┘ │
-│                                                           │
-│ ┌─────────────────────────────────────────────────────┐   │
-│ │ 🔵 Work (5)                                      [×]│   │ ← Group header
-│ └─────────────────────────────────────────────────────┘   │
-│  🌐📌🔈 GitHub - Pull Requests      [42]     [☆]  [×]  │ ← Star to favorite
-│  📧 Gmail - Inbox             [2×] [89] 🔇   [★]  [×]  │ ← Already favorited
-│  📊 Google Sheets - Q1 Data        [156]     [☆]  [×]  │
-│  📧 Gmail - Inbox             [2×] [89]      [☆]  [×]  │
-│  📝 Notion - Projects                        [☆]  [×]  │
-│                                                           │
-│ ┌─────────────────────────────────────────────────────┐   │
-│ │ 🟢 Research (4)                                  [×]│   │
-│ └─────────────────────────────────────────────────────┘   │
-│  📄 Wikipedia - React                        [☆]  [×]  │
-│  🔍 Stack Overflow - Async Questions  [3×]   [☆]  [×]  │
-│  📰 Medium - Web Development                [☆]  [×]  │
-│  🔍 Stack Overflow - Async Questions  [3×]   [☆]  [×]  │
-│                                                           │
-│ ┌─────────────────────────────────────────────────────┐   │
-│ │ Ungrouped Tabs (3)                                  │   │
-│ └─────────────────────────────────────────────────────┘   │
-│  🎵🔊 YouTube - Music                       [☆]  [×]  │ ← Playing audio
-│  🛒 Amazon - Shopping Cart         [2×]     [☆]  [×]  │
-│  🛒 Amazon - Shopping Cart         [2×]     [☆]  [×]  │
-│                                                           │
-│ ┌─────────────────────────────────────────────────────┐   │
-│ │ Recently Closed (3)                                 │   │
-│ └─────────────────────────────────────────────────────┘   │
-│  📰 CNN News Article          🔵Work    5m ago       [↶]  │
-│  🔍 Stack Overflow Question              2h ago      [↶]  │
-│  📧 Gmail - Old Email         🟢Research 1d ago      [↶]  │
-│                                                           │
-│ ┌─────────────────────────────────────────────────────┐   │
-│ │ ⭐ Favorite Sites (1)                               │   │ ← Gold header
-│ └─────────────────────────────────────────────────────┘   │
-│  🐙 GitHub                                          [×]  │ ← Grayed out, click to open
-│                                                           │
-│ Created by Steve Souza | Experimental Project             │
-└───────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│ Tab Manager                                               ℹ️  │
+│ by Steve Souza & Claude Code (01/26)                           │
+│                                                                │
+│ Total groups: 3 | Total tabs: 12                               │
+│                                                                │
+│ [▼ Filters & Sort]                            ← Click to expand│
+│                                                                │
+│ [Duplicates] [Audio] [Pinned] [Favorites] [Stale(1w+)] ☐AND   │
+│                                                                │
+│ [Search tabs and groups...              ✕] [▼] [Groups | All] │
+│                                                                │
+│ ┌────────────────────────────────────────────────────────────┐ │
+│ │ ▼ 🔵 Work (5)                                          [×]│ │
+│ └────────────────────────────────────────────────────────────┘ │
+│   🌐📌🔈 GitHub - Pull Requests    [42]       [☆]  [×]       │
+│   📧 Gmail - Inbox           [2×] [89] 🔇     [★]  [×]       │
+│   📊 Google Sheets - Q1 Data      [156]       [☆]  [×]       │
+│   📧 Gmail - Inbox           [2×] [89]        [☆]  [×]       │
+│   📝 Notion - Projects                        [☆]  [×]       │
+│                                                                │
+│ ┌────────────────────────────────────────────────────────────┐ │
+│ │ ▼ 🟢 Research (4)                                      [×]│ │
+│ └────────────────────────────────────────────────────────────┘ │
+│   📄 Wikipedia - React                        [☆]  [×]       │
+│   🔍 Stack Overflow - Async Questions   [3×]  [☆]  [×]       │
+│   📰 Medium - Web Development                 [☆]  [×]       │
+│   🔍 Stack Overflow - Async Questions   [3×]  [☆]  [×]       │
+│                                                                │
+│ ┌────────────────────────────────────────────────────────────┐ │
+│ │ Ungrouped Tabs (3)                                         │ │
+│ └────────────────────────────────────────────────────────────┘ │
+│   🎵🔊 YouTube - Music                       [☆]  [×]       │
+│   🛒 Amazon - Shopping Cart        [2×]       [☆]  [×]       │
+│   🛒 Amazon - Shopping Cart        [2×]       [☆]  [×]       │
+│                                                                │
+│ ┌────────────────────────────────────────────────────────────┐ │
+│ │ Recently Closed (3)                                        │ │
+│ └────────────────────────────────────────────────────────────┘ │
+│   📰 CNN News Article        🔵Work      5m ago          [↶] │
+│   🔍 Stack Overflow Question              2h ago          [↶] │
+│   📧 Gmail - Old Email       🟢Research   1d ago          [↶] │
+│                                                                │
+│ ┌────────────────────────────────────────────────────────────┐ │
+│ │ ⭐ Favorite Sites (1)                                      │ │
+│ └────────────────────────────────────────────────────────────┘ │
+│   🐙 GitHub                                              [×] │
+│                                                                │
+│ Created by Steve Souza | Experimental Project                  │
+└────────────────────────────────────────────────────────────────┘
 ```
 
 ### With Controls Expanded
 ```
-┌───────────────────────────────────────────────────────────┐
-│ Tab Manager                                          ℹ️   │
-│ by Steve Souza & Claude Code (01/26)                      │
-│                                                           │
-│ Total groups: 3 | Total tabs: 12                         │
-│                                                           │
-│ [▲ Filters & Sort                                      ]  │ ← Click to collapse
-│                                                           │
-│ [Close Duplicates] [Show Recently Closed (3)]            │
-│ [Sort: Most Visited First ▼]      [Clear Filters]        │
-│ ☑ Sort globally (across all groups)                      │
-│                                                           │
-│ [Duplicates] [Audio] [Pinned] [Favorites] [Stale(1w+)] ☐AND │
-│ ┌───────────────────────────────────────────────────────┐ │
-│ │ Search tabs and groups...                             │ │
-│ └───────────────────────────────────────────────────────┘ │
-│                                                           │
-│ [Tab list appears here...]                               │
-│                                                           │
-│ Created by Steve Souza | Experimental Project             │
-└───────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│ Tab Manager                                               ℹ️  │
+│ by Steve Souza & Claude Code (01/26)                           │
+│                                                                │
+│ Total groups: 3 | Total tabs: 12                               │
+│                                                                │
+│ [▲ Filters & Sort]                          ← Click to collapse│
+│                                                                │
+│ [Close Duplicates]  [Show Recently Closed (3)]                 │
+│ [Sort: Most Visited First ▼]          [Clear Filters]          │
+│                                                                │
+│ [Duplicates] [Audio] [Pinned] [Favorites] [Stale(1w+)] ☐AND   │
+│                                                                │
+│ [Search tabs and groups...              ✕] [▼] [Groups | All] │
+│                                                                │
+│ [Tab list appears here...]                                     │
+│                                                                │
+│ Created by Steve Souza | Experimental Project                  │
+└────────────────────────────────────────────────────────────────┘
 ```
 
-### With Sort by Title (A→Z) - Per-Group Mode
+### Groups View - Sort by Title (A→Z)
 ```
-┌─────────────────────────────────────────┐
-│ Tab Manager                        ℹ️   │
-│ by Steve Souza & Claude Code (01/26)    │
-│                                         │
-│ Total tab groups: 3                     │
-│ Total tabs: 12                          │
-│                                         │
-│ [Close Duplicates] [Show Recently ...]  │
-│ [Sort: Title (A→Z)▼]      [Clear]      │ ← Sort active
-│ ☐ Sort globally (across all groups)    │ ← Checkbox (unchecked)
-│ ┌─────────────────────────────────────┐ │
-│ │ Search tabs and groups...           │ │
-│ └─────────────────────────────────────┘ │
-│                                         │
-│ ┌───────────────────────────────────┐   │
-│ │ 🔵 Work (5)                    [×]│   │
-│ └───────────────────────────────────┘   │
-│  📧 Gmail - Inbox          [2×] 🔇  [×]  │ ← Sorted alphabetically
-│  📧 Gmail - Inbox          [2×]     [×]  │    within Work group
-│  🌐📌🔈 GitHub - Pull Req...       [×]   │
-│  📊 Google Sheets - Q1 Data       [×]   │
-│  📝 Notion - Projects              [×]  │
-│                                         │
-│ ┌───────────────────────────────────┐   │
-│ │ 🟢 Research (4)                [×]│   │
-│ └───────────────────────────────────┘   │
-│  📰 Medium - Web Dev               [×]  │ ← Sorted alphabetically
-│  🔍 Stack Overflow - Async    [3×] [×]  │    within Research group
-│  🔍 Stack Overflow - Async    [3×] [×]  │
-│  📄 Wikipedia - React              [×]  │
-│                                         │
-│ ┌───────────────────────────────────┐   │
-│ │ Ungrouped Tabs (3)                │   │
-│ └───────────────────────────────────┘   │
-│  🛒 Amazon - Cart             [2×] [×]  │
-│  🛒 Amazon - Cart             [2×] [×]  │
-│  🎵🔊 YouTube - Music              [×]  │
-│                                         │
-│ Created by Steve Souza | Experimental   │
-└─────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│ [Sort: Title (A→Z) ▼]                [Clear Filters]          │
+│                                                                │
+│ [Duplicates] [Audio] [Pinned] [Favorites] [Stale(1w+)] ☐AND   │
+│                                                                │
+│ [Search tabs and groups...              ✕] [▼] [Groups | All] │
+│                                           active ↗             │
+│ ┌────────────────────────────────────────────────────────────┐ │
+│ │ ▼ 🔵 Work (5)                                          [×]│ │
+│ └────────────────────────────────────────────────────────────┘ │
+│   📧 Gmail - Inbox           [2×] 🔇         [☆]  [×]       │
+│   📧 Gmail - Inbox           [2×]             [☆]  [×]       │
+│   🌐📌🔈 GitHub - Pull Requests               [☆]  [×]       │
+│   📊 Google Sheets - Q1 Data                  [☆]  [×]       │
+│   📝 Notion - Projects                        [☆]  [×]       │
+│                                                                │
+│ ┌────────────────────────────────────────────────────────────┐ │
+│ │ ▶ 🟢 Research (4)                                      [×]│ │
+│ └────────────────────────────────────────────────────────────┘ │
+│   (collapsed — tabs hidden)                                    │
+│                                                                │
+│ ┌────────────────────────────────────────────────────────────┐ │
+│ │ ▼ Ungrouped Tabs (3)                                       │ │
+│ └────────────────────────────────────────────────────────────┘ │
+│   🛒 Amazon - Shopping Cart        [2×]       [☆]  [×]       │
+│   🛒 Amazon - Shopping Cart        [2×]       [☆]  [×]       │
+│   🎵🔊 YouTube - Music                       [☆]  [×]       │
+│                                                                │
+│ Created by Steve Souza | Experimental Project                  │
+└────────────────────────────────────────────────────────────────┘
 ```
 
-### With Global Sort (Title A→Z) - All Tabs Together
+### All View - Sort by Title (A→Z)
 ```
-┌─────────────────────────────────────────┐
-│ Tab Manager                        ℹ️   │
-│ by Steve Souza & Claude Code (01/26)    │
-│                                         │
-│ Total tab groups: 3                     │
-│ Total tabs: 12                          │
-│                                         │
-│ [Close Duplicates] [Show Recently ...]  │
-│ [Sort: Title (A→Z)▼]      [Clear]      │
-│ ☑ Sort globally (across all groups)    │ ← Checkbox CHECKED
-│ ┌─────────────────────────────────────┐ │
-│ │ Search tabs and groups...           │ │
-│ └─────────────────────────────────────┘ │
-│                                         │
-│  🛒 🔘No Group Amazon - Cart  [2×] [×]  │ ← Flat list, alphabetically
-│  🛒 🔘No Group Amazon - Cart  [2×] [×]  │    sorted across ALL groups
-│  📧 🔵Work Gmail - Inbox     [2×] 🔇[×] │ ← Group badge shown
-│  📧 🔵Work Gmail - Inbox     [2×]   [×] │
-│  🌐📌🔈🔵Work GitHub - Pull...     [×]   │
-│  📊 🔵Work Google Sheets...        [×]  │
-│  📰 🟢Research Medium - Web Dev    [×]  │
-│  📝 🔵Work Notion - Projects       [×]  │
-│  🔍 🟢Research Stack Overflow [3×] [×]  │
-│  🔍 🟢Research Stack Overflow [3×] [×]  │
-│  🔍 🟢Research Stack Overflow [3×] [×]  │
-│  📄 🟢Research Wikipedia - React   [×]  │
-│  🎵🔊🔘No Group YouTube - Music    [×]  │
-│                                         │
-│ Created by Steve Souza | Experimental   │
-└─────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│ [Sort: Title (A→Z) ▼]                [Clear Filters]          │
+│                                                                │
+│ [Duplicates] [Audio] [Pinned] [Favorites] [Stale(1w+)] ☐AND   │
+│                                                                │
+│ [Search tabs and groups...              ✕]     [Groups | All]  │
+│                                                   active ↗     │
+│   🛒 Amazon - Shopping Cart  🔘         [2×]  [☆]  [×]       │
+│   🛒 Amazon - Shopping Cart  🔘         [2×]  [☆]  [×]       │
+│   📧 Gmail - Inbox           🔵Work     [2×]  [★]  [×]       │
+│   📧 Gmail - Inbox           🔵Work     [2×]  [☆]  [×]       │
+│   🌐 GitHub - Pull Requests  🔵Work            [☆]  [×]       │
+│   📊 Google Sheets - Q1 Data 🔵Work            [☆]  [×]       │
+│   📰 Medium - Web Dev        🟢Research        [☆]  [×]       │
+│   📝 Notion - Projects       🔵Work            [☆]  [×]       │
+│   🔍 Stack Overflow - Async  🟢Research [3×]  [☆]  [×]       │
+│   🔍 Stack Overflow - Async  🟢Research [3×]  [☆]  [×]       │
+│   📄 Wikipedia - React       🟢Research        [☆]  [×]       │
+│   🎵 YouTube - Music         🔘                [☆]  [×]       │
+│                                                                │
+│ Created by Steve Souza | Experimental Project                  │
+└────────────────────────────────────────────────────────────────┘
 ```
 
 ### Legend
@@ -291,8 +268,12 @@ This Chrome extension helps you manage browser tabs with features like search, f
 - [▲ Filters & Sort] - Controls expanded (click to collapse)
 - [Duplicates] [Audio] etc. - Filter chips (click to filter, always visible)
 - ☐AND - Combine multiple chip filters (default: single-select)
-- 🔵🟢🔴🟡 - Group color badges (in recently closed and global sort mode)
-- 🔘No Group - Ungrouped tab badge (gray, appears in global sort mode)
+- [Groups | All] - View toggle: grouped with headers vs. flat sorted list
+- [▼] button - Collapse/expand all groups (hidden in All view)
+- ▼/▶ on group headers - Expanded/collapsed group (click to toggle)
+- ✕ in search box - Clear search text (appears when typing)
+- 🔵🟢🔴🟡 - Group color badges (in recently closed and All view)
+- 🔘 - Ungrouped tab badge (gray, appears in All view)
 - [×] - Close button (appears on hover for open tabs / favorite sites)
 - [↶] - Restore button (always visible for closed tabs)
 - [☆] - Add to favorites (appears on hover)
