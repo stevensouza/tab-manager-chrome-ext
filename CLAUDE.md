@@ -77,8 +77,8 @@ renderTabs(searchTerm)
   ↓
   - Organizes tabs by groups (organizeTabsByGroup)
   - Sorts groups alphabetically (if group-recent mode)
-  - Applies filters: search, duplicate, group, chips (tabMatchesFilters)
-  - Renders group headers with tab counts
+  - Applies filters: search, duplicate, chips (tabMatchesFilters)
+  - Renders group headers with chevron, tab counts, collapse/expand on click
   - Renders tabs with favicons, badges, star/close buttons (createTabElement)
   - Renders ungrouped tabs
   - Renders recently closed tabs (renderRecentlyClosedTabs) - hidden when chips active
@@ -91,7 +91,7 @@ renderTabs(searchTerm)
 ```javascript
 allTabs = []              // All browser tabs
 allGroups = []            // All tab groups
-activeGroupFilter = null  // Currently filtered group ID (null = show all) - NOT persisted
+collapsedGroups = new Set()  // Group IDs that are collapsed (accordion) - PERSISTED to localStorage
 activeTabId = null        // ID of active tab (for highlighting)
 urlCounts = {}            // Map of URL → count (for duplicate detection)
 visitCounts = {}          // Map of URL → visit count (from history)
@@ -119,15 +119,16 @@ The `tabMatchesFilters(tab)` function is shared by:
 Filters checked (all AND):
 - Search term (title/URL match)
 - Duplicate filter (chip)
-- Group filter (click group header)
 - Audio filter (chip: `tab.audible || tab.mutedInfo?.muted`)
 - Pinned filter (chip: `tab.pinned`)
 - Favorites filter (chip: origin matches a favorite site)
 - Old tabs filter (chip: `lastAccessed > 1 week ago`)
 
+Note: Group collapse (accordion) is purely visual — it does NOT affect `tabMatchesFilters`.
+Search auto-expands collapsed groups that contain matching tabs.
+
 This ensures "Close Duplicates" respects active filters:
 - Search "github" → only closes github duplicates
-- Filter by group → only closes duplicates in that group
 - Combined filters → respects all simultaneously
 
 ### Filter Chips Behavior
@@ -163,13 +164,16 @@ closeBtn.addEventListener('click', (e) => closeTab(tab.id, e));
 // - Calls loadTabs() to refresh UI
 ```
 
-**Group Header (Click to Filter):**
+**Group Header (Click to Collapse/Expand):**
 ```javascript
 groupHeader.addEventListener('click', (e) => {
-  if (e.target === closeBtn) return; // Don't filter when closing
-  activeGroupFilter = (activeGroupFilter === group.id) ? null : group.id;
+  if (e.target === closeBtn) return; // Don't collapse when closing
+  toggleGroupCollapse(group.id);
   renderTabs(searchTerm);
 });
+// Chevron shows ▶ (collapsed) or ▼ (expanded)
+// Collapse state persisted to localStorage (tabManagerCollapsedGroups)
+// Search auto-expands collapsed groups with matching tabs
 ```
 
 ## Chrome Extension Specifics

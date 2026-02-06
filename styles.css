@@ -79,6 +79,25 @@ h1 {
   font-weight: 600;
 }
 
+/* Collapse/Expand All toggle button (next to stats) */
+.toggle-all-groups-btn {
+  background: none;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  padding: 2px 8px;
+  margin-left: 8px;
+  cursor: pointer;
+  font-size: 10px;
+  color: #5f6368;
+  transition: all 0.2s;
+  vertical-align: middle;
+}
+
+.toggle-all-groups-btn:hover {
+  background: #f1f3f4;
+  border-color: #ccc;
+}
+
 #tabCount {
   font-weight: bold;
   color: #4688F1;  /* Blue accent matching Chrome UI */
@@ -222,10 +241,14 @@ h1 {
  * ============================================================================
  */
 
+.search-container {
+  position: relative;
+  margin-bottom: 12px;
+}
+
 .search-box {
   width: 100%;
-  padding: 8px 12px;
-  margin-bottom: 12px;
+  padding: 8px 30px 8px 12px;  /* Right padding for clear button */
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
@@ -235,6 +258,32 @@ h1 {
 .search-box:focus {
   outline: none;
   border-color: #4688F1;  /* Blue border when focused */
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: none;
+  color: #80868b;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 50%;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.search-clear-btn:hover {
+  background: #dadce0;
+  color: #333;
 }
 
 /*
@@ -320,7 +369,7 @@ h1 {
   font-weight: 600;
   font-size: 13px;
   color: white;
-  cursor: pointer;  /* Clickable to filter by group */
+  cursor: pointer;  /* Clickable to collapse/expand group */
   user-select: none;
   position: relative;
 }
@@ -329,9 +378,20 @@ h1 {
   opacity: 0.85;
 }
 
-/* Visual indicator when group is actively filtered */
-.group-header.filtered {
-  box-shadow: 0 0 0 2px #333;  /* Dark border around filtered group */
+/* Collapse/expand chevron indicator on group headers */
+.group-chevron {
+  font-size: 10px;
+  margin-right: 6px;
+  display: inline-block;
+  width: 12px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Collapsed group - header only, reduced bottom margin */
+.group-container.collapsed .group-header {
+  margin-bottom: 0;
+  opacity: 0.9;
 }
 
 .group-name {

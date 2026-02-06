@@ -14,7 +14,11 @@
     <p class="subtitle">by Steve Souza & Claude Code (01/26)</p>
 
     <!-- Tab statistics - Updated dynamically by popup.js -->
-    <p class="stats-line">Total groups: <span id="groupCount">0</span> | Total tabs: <span id="tabCount">0</span></p>
+    <p class="stats-line">Total groups: <span id="groupCount">0</span> | Total tabs: <span id="tabCount">0</span>
+      <button id="toggleAllGroups" class="toggle-all-groups-btn" title="Collapse/Expand all groups">
+        <span class="toggle-all-icon">&#x25BC;</span>
+      </button>
+    </p>
 
     <!-- Toggle button for collapsible controls -->
     <button id="toggleControls" class="toggle-controls-btn" title="Show/hide filters and sorting options">
@@ -81,7 +85,10 @@
     </div>
 
     <!-- Search box for filtering tabs by title, URL, or group name (always visible) -->
-    <input type="text" id="searchBox" class="search-box" placeholder="Search tabs and groups...">
+    <div class="search-container">
+      <input type="text" id="searchBox" class="search-box" placeholder="Search tabs and groups...">
+      <button id="searchClearBtn" class="search-clear-btn" title="Clear search" style="display: none;">&times;</button>
+    </div>
 
     <!-- Main container where tabs and groups are rendered dynamically -->
     <!-- This div starts empty - popup.js fills it with tab elements -->

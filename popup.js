@@ -20,9 +20,11 @@ let allTabs = [];
 // All tab groups across all windows (fetched via chrome.tabGroups.query)
 let allGroups = [];
 
-// Currently selected group filter (null = show all groups, number = specific group ID)
-// Users activate this by clicking group headers
-let activeGroupFilter = null;
+// Set of group IDs that are currently collapsed (accordion UI)
+// Persisted to localStorage as JSON array
+let collapsedGroups = new Set(
+  JSON.parse(localStorage.getItem('tabManagerCollapsedGroups') || '[]')
+);
 
 // ID of the currently active tab (highlighted with blue border)
 let activeTabId = null;
@@ -74,6 +76,44 @@ let oldTabsFilterActive = false;
 // When true, multiple chip filters are ANDed together
 // When false (default), clicking a chip deselects others (single-select mode)
 let combineFiltersMode = false;
+
+/*
+ * ============================================================================
+ * GROUP COLLAPSE/EXPAND HELPERS
+ * ============================================================================
+ */
+
+function toggleGroupCollapse(groupId) {
+  if (collapsedGroups.has(groupId)) {
+    collapsedGroups.delete(groupId);
+  } else {
+    collapsedGroups.add(groupId);
+  }
+  saveCollapsedGroups();
+}
+
+function saveCollapsedGroups() {
+  localStorage.setItem('tabManagerCollapsedGroups', JSON.stringify([...collapsedGroups]));
+}
+
+function collapseAllGroups() {
+  allGroups.forEach(group => collapsedGroups.add(group.id));
+  saveCollapsedGroups();
+  renderTabs(currentSearchTerm);
+}
+
+function expandAllGroups() {
+  collapsedGroups.clear();
+  saveCollapsedGroups();
+  renderTabs(currentSearchTerm);
+}
+
+function updateToggleAllIcon() {
+  const icon = document.querySelector('.toggle-all-icon');
+  if (!icon) return;
+  const allCollapsed = allGroups.length > 0 && allGroups.every(g => collapsedGroups.has(g.id));
+  icon.textContent = allCollapsed ? '\u25B6' : '\u25BC';
+}
 
 /*
  * ============================================================================
@@ -655,15 +695,19 @@ function renderTabs(searchTerm = '') {
     const groupName = group.title || `${group.color} group`;
     const groupNameMatches = searchTerm && groupName.toLowerCase().includes(lowerSearch);
 
-    // Skip if filtering by different group
-    if (activeGroupFilter !== null && activeGroupFilter !== group.id) return;
-
     // Skip if no matching tabs and group name doesn't match search
     if (filteredTabs.length === 0 && !groupNameMatches) return;
+
+    // Determine collapse state (search auto-expands groups with matching tabs)
+    const hasSearchOverride = searchTerm && filteredTabs.length > 0;
+    const isCollapsed = collapsedGroups.has(group.id) && !hasSearchOverride;
 
     // Create group container
     const groupContainer = document.createElement('div');
     groupContainer.className = 'group-container';
+    if (isCollapsed) {
+      groupContainer.classList.add('collapsed');
+    }
 
     // Create group header with color coding
     const groupHeader = document.createElement('div');
@@ -671,10 +715,11 @@ function renderTabs(searchTerm = '') {
     groupHeader.dataset.groupId = group.id;
     groupHeader.dataset.groupColor = group.color; // Used for CSS color matching
 
-    // Visual indicator when filtering by this group
-    if (activeGroupFilter === group.id) {
-      groupHeader.classList.add('filtered');
-    }
+    // Collapse/expand chevron indicator
+    const chevron = document.createElement('span');
+    chevron.className = 'group-chevron';
+    chevron.textContent = isCollapsed ? '\u25B6' : '\u25BC';
+    groupHeader.appendChild(chevron);
 
     // Group name
     const groupNameSpan = document.createElement('span');
@@ -695,32 +740,32 @@ function renderTabs(searchTerm = '') {
     closeBtn.addEventListener('click', (e) => closeGroup(group.id, e));
     groupHeader.appendChild(closeBtn);
 
-    // Click header to toggle group filter (but not when clicking close button)
+    // Click header to toggle collapse/expand (but not when clicking close button)
     groupHeader.addEventListener('click', (e) => {
       if (e.target === closeBtn) return;
-      // Toggle: click again to clear filter
-      if (activeGroupFilter === group.id) {
-        activeGroupFilter = null;
-      } else {
-        activeGroupFilter = group.id;
-      }
+      toggleGroupCollapse(group.id);
       renderTabs(searchTerm);
     });
 
     groupContainer.appendChild(groupHeader);
 
-    // Render individual tabs in group
-    filteredTabs.forEach(tab => {
-      const tabItem = createTabElement(tab);
-      groupContainer.appendChild(tabItem);
-    });
+    // Only render individual tabs if group is not collapsed
+    if (!isCollapsed) {
+      filteredTabs.forEach(tab => {
+        const tabItem = createTabElement(tab);
+        groupContainer.appendChild(tabItem);
+      });
+    }
 
     tabList.appendChild(groupContainer);
   });
 
-  // Render ungrouped tabs (only if not filtering by a specific group)
+  // Update collapse/expand all button icon
+  updateToggleAllIcon();
+
+  // Render ungrouped tabs
   const filteredUngrouped = sortTabs(organized.ungrouped.filter(matchesAllFilters));
-  if (filteredUngrouped.length > 0 && activeGroupFilter === null) {
+  if (filteredUngrouped.length > 0) {
     const ungroupedContainer = document.createElement('div');
     ungroupedContainer.className = 'ungrouped-container';
 
@@ -1188,12 +1233,11 @@ function clearFilters() {
   searchBox.value = '';
   currentSearchTerm = '';
   localStorage.setItem('tabManagerSearchTerm', '');
+  const searchClearBtn = document.getElementById('searchClearBtn');
+  if (searchClearBtn) searchClearBtn.style.display = 'none';
 
   // Clear duplicate filter
   duplicateFilterActive = false;
-
-  // Clear group filter
-  activeGroupFilter = null;
 
   // Clear filter chip states
   audioFilterActive = false;
@@ -1314,11 +1358,6 @@ function tabMatchesFilters(tab) {
     return false;
   }
 
-  // Group filter (only show tabs in selected group)
-  if (activeGroupFilter !== null && tab.groupId !== activeGroupFilter) {
-    return false;
-  }
-
   // Audio filter (only show tabs playing sound or muted)
   if (audioFilterActive && !tab.audible && !tab.mutedInfo?.muted) {
     return false;
@@ -1392,7 +1431,7 @@ async function closeDuplicateTabs() {
   if (tabsToClose.length > 0) {
     let message = `Close ${tabsToClose.length} duplicate tabs? (Keeps one of each URL)`;
     // Indicate if filters are limiting scope
-    if (currentSearchTerm || duplicateFilterActive || activeGroupFilter !== null) {
+    if (currentSearchTerm || duplicateFilterActive) {
       message = `Close ${tabsToClose.length} duplicate tabs? (Only from currently filtered tabs)`;
     }
 
@@ -1620,6 +1659,17 @@ async function loadTabs() {
   // Fetch all tab groups
   allGroups = await chrome.tabGroups.query({});
 
+  // Clean up stale collapsed group IDs (groups that no longer exist)
+  const currentGroupIds = new Set(allGroups.map(g => g.id));
+  let staleRemoved = false;
+  for (const id of collapsedGroups) {
+    if (!currentGroupIds.has(id)) {
+      collapsedGroups.delete(id);
+      staleRemoved = true;
+    }
+  }
+  if (staleRemoved) saveCollapsedGroups();
+
   // Get currently active tab for highlighting
   const [activeTab] = await chrome.tabs.query({
     active: true,
@@ -1744,6 +1794,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // Add toggle listener for collapsible controls
   button.addEventListener('click', toggleControls);
 
+  // Collapse/Expand All groups toggle
+  document.getElementById('toggleAllGroups').addEventListener('click', () => {
+    const allCollapsed = allGroups.length > 0 && allGroups.every(g => collapsedGroups.has(g.id));
+    if (allCollapsed) {
+      expandAllGroups();
+    } else {
+      collapseAllGroups();
+    }
+  });
+
   // Restore saved search term from localStorage
   const savedSearch = localStorage.getItem('tabManagerSearchTerm');
   if (savedSearch) {
@@ -1756,10 +1816,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Real-time search as user types
   const searchBox = document.getElementById('searchBox');
+  const searchClearBtn = document.getElementById('searchClearBtn');
   searchBox.addEventListener('input', (e) => {
     localStorage.setItem('tabManagerSearchTerm', e.target.value);
+    searchClearBtn.style.display = e.target.value ? 'flex' : 'none';
     renderTabs(e.target.value);
   });
+
+  // Clear search button
+  searchClearBtn.addEventListener('click', () => {
+    searchBox.value = '';
+    currentSearchTerm = '';
+    localStorage.setItem('tabManagerSearchTerm', '');
+    searchClearBtn.style.display = 'none';
+    renderTabs('');
+    searchBox.focus();
+  });
+
+  // Show clear button if search was restored from localStorage
+  if (searchBox.value) {
+    searchClearBtn.style.display = 'flex';
+  }
 
   // Auto-focus search box on popup open
   searchBox.focus();
