@@ -302,6 +302,18 @@ Detailed specs are in separate files — read these when modifying a specific fe
 
 ## Version History
 
+- **v2.6** - UI Redesign (compact header, always-visible controls, visual polish)
+  - Compact 1-row header (title left, "N groups · N tabs ℹ️" right)
+  - Removed collapsible controls — sort, chips, and actions always visible
+  - Search box magnifying glass icon
+  - Shortened chip labels (Dupes, Audio, Pinned, Faves, Stale)
+  - Segmented [Any | All] mode toggle replaces AND checkbox
+  - Close Dupes button only appears when duplicates exist
+  - Recently Closed inline header with Show/Hide toggle
+  - Dotted indent rail on ALL sections (groups, ungrouped, recently closed, favorites)
+  - "Open →" hover label on favorite sites
+  - Age color key footer, attribution moved to help modal
+  - 8px border-radius, 4px age borders, tighter spacing
 - **v2.5** - Search UX + Accordion Groups + View Toggle
   - Search clear X button (clears search text in one click)
   - Accordion collapse/expand for tab groups (click header, chevron indicator, persisted)

@@ -6,76 +6,21 @@
 </head>
 <body>
   <div class="container">
-    <!-- Extension title and attribution -->
-    <h1>
-      Tab Manager
-      <span class="info-icon" id="infoIcon">ℹ️</span>
-    </h1>
-    <p class="subtitle">by Steve Souza & Claude Code (01/26)</p>
-
-    <!-- Tab statistics - Updated dynamically by popup.js -->
-    <p class="stats-line">Total groups: <span id="groupCount">0</span> | Total tabs: <span id="tabCount">0</span></p>
-
-    <!-- Toggle button for collapsible controls -->
-    <button id="toggleControls" class="toggle-controls-btn" title="Show/hide filters and sorting options">
-      <span class="caret">▼</span> Filters & Sort
-    </button>
-
-    <!-- Collapsible controls section -->
-    <div id="controlsSection" class="controls-section collapsed">
-
-    <!-- Action buttons and section toggles -->
-    <div class="duplicate-controls">
-      <!-- Button to close all duplicate tabs (keeps one of each URL) -->
-      <button id="closeDuplicatesBtn" class="close-duplicates-btn">Close Duplicates</button>
-
-      <!-- Toggle button to show/hide recently closed tabs -->
-      <button id="closedTabsToggle" class="closed-tabs-toggle">
-        Show Recently Closed (<span id="closedTabsCount">0</span>)
-      </button>
-    </div>
-
-    <!-- Sort and filter controls -->
-    <div class="sort-filter-controls">
-      <!-- Sort dropdown to organize tabs -->
-      <select id="sortDropdown" class="sort-dropdown">
-        <option value="group-recent">Sort: Groups (A→Z) + Recent First (Default)</option>
-        <option value="default">Sort: Browser Tab Order</option>
-        <option value="title-asc">Sort: Title (A→Z)</option>
-        <option value="title-desc">Sort: Title (Z→A)</option>
-        <option value="url-asc">Sort: URL (A→Z)</option>
-        <option value="url-desc">Sort: URL (Z→A)</option>
-        <option value="age-newest">Sort: Newest First</option>
-        <option value="age-oldest">Sort: Oldest First</option>
-        <option value="most-visited">Sort: Most Visited First</option>
-        <option value="least-visited">Sort: Least Visited First</option>
-      </select>
-
-      <!-- Clear all active filters button -->
-      <button id="clearFiltersBtn" class="clear-filters-btn">Clear Filters</button>
-    </div>
-
-
-    </div> <!-- End collapsible controls section -->
-
-    <!-- Filter chips - always visible, quick toggle filters -->
-    <div class="filter-chips-row">
-      <div class="filter-chips">
-        <button class="filter-chip" data-filter="dupes" title="Show only tabs with duplicate URLs">Duplicates</button>
-        <button class="filter-chip" data-filter="audio" title="Show only tabs playing or muting audio">Audio</button>
-        <button class="filter-chip" data-filter="pinned" title="Show only pinned tabs">Pinned</button>
-        <button class="filter-chip" data-filter="faves" title="Show only favorited sites">Favorites</button>
-        <button class="filter-chip" data-filter="old" title="Show only tabs not accessed in over a week">Stale (1w+)</button>
+    <!-- Compact header: title left, stats + info right -->
+    <div class="header-row">
+      <h1>Tab Manager</h1>
+      <div class="header-stats">
+        <span><span id="groupCount">0</span> groups</span>
+        <span class="stats-dot">&middot;</span>
+        <span><span id="tabCount">0</span> tabs</span>
+        <span class="info-icon" id="infoIcon">ℹ️</span>
       </div>
-      <label class="combine-filters-label" title="When checked, multiple filters are combined (AND logic)">
-        <input type="checkbox" id="combineFiltersToggle" class="combine-filters-checkbox">
-        <span>AND</span>
-      </label>
     </div>
 
     <!-- Search box + view controls row -->
     <div class="search-row">
       <div class="search-container">
+        <span class="search-icon">&#x1F50D;</span>
         <input type="text" id="searchBox" class="search-box" placeholder="Search tabs and groups...">
         <button id="searchClearBtn" class="search-clear-btn" title="Clear search" style="display: none;">&times;</button>
       </div>
@@ -88,13 +33,53 @@
       </div>
     </div>
 
+    <!-- Filter chips - always visible, quick toggle filters -->
+    <div class="filter-chips-row">
+      <div class="filter-chips">
+        <button class="filter-chip" data-filter="dupes" title="Show only tabs with duplicate URLs">Dupes</button>
+        <button class="filter-chip" data-filter="audio" title="Show only tabs playing or muting audio">Audio</button>
+        <button class="filter-chip" data-filter="pinned" title="Show only pinned tabs">Pinned</button>
+        <button class="filter-chip" data-filter="faves" title="Show only favorited sites">Faves</button>
+        <button class="filter-chip" data-filter="old" title="Show tabs not accessed in over a week (1w+)">Stale</button>
+      </div>
+      <div class="mode-toggle">
+        <button class="mode-btn active" data-mode="any" title="Single-select: clicking one chip deselects others">Any</button>
+        <button class="mode-btn" data-mode="all" title="Combine multiple filters with AND logic">All</button>
+      </div>
+    </div>
+
+    <!-- Sort + action row (always visible) -->
+    <div class="action-row">
+      <select id="sortDropdown" class="sort-dropdown">
+        <option value="group-recent">Groups A→Z + Recent</option>
+        <option value="default">Browser Order</option>
+        <option value="title-asc">Title A→Z</option>
+        <option value="title-desc">Title Z→A</option>
+        <option value="url-asc">URL A→Z</option>
+        <option value="url-desc">URL Z→A</option>
+        <option value="age-newest">Newest First</option>
+        <option value="age-oldest">Oldest First</option>
+        <option value="most-visited">Most Visited</option>
+        <option value="least-visited">Least Visited</option>
+      </select>
+      <button id="clearFiltersBtn" class="clear-filters-btn">Clear Filters</button>
+      <!-- Close Dupes button: hidden by default, shown by JS when duplicates exist -->
+      <button id="closeDuplicatesBtn" class="close-dupes-btn" style="display: none;">Close Dupes</button>
+    </div>
+
+    <!-- Divider between controls and tab list -->
+    <div class="divider"></div>
+
     <!-- Main container where tabs and groups are rendered dynamically -->
     <!-- This div starts empty - popup.js fills it with tab elements -->
     <div id="tabList"></div>
 
-    <!-- Footer attribution -->
-    <div class="footer">
-      Created by <a href="https://github.com/stevensouza/tab-manager-chrome-ext" target="_blank">Steve Souza</a> | Experimental Project
+    <!-- Age color key (replaces footer) -->
+    <div class="age-key">
+      <span class="age-dot"><span class="dot green"></span> &lt;2h</span>
+      <span class="age-dot"><span class="dot yellow"></span> &lt;24h</span>
+      <span class="age-dot"><span class="dot orange"></span> &lt;1w</span>
+      <span class="age-dot"><span class="dot red"></span> &gt;1w</span>
     </div>
 
     <!-- Help Modal -->
@@ -102,6 +87,7 @@
       <div class="modal-content">
         <span class="close-modal">&times;</span>
         <h2>Tab Manager Help</h2>
+        <p class="help-attribution">by <a href="https://github.com/stevensouza/tab-manager-chrome-ext" target="_blank">Steve Souza</a> &amp; Claude Code (01/26)</p>
 
         <h3>⌨️ Keyboard Shortcuts</h3>
         <table class="help-table">
@@ -133,6 +119,10 @@
           <tr>
             <td><strong>✕</strong> in search</td>
             <td>Clears the search text. Searching auto-expands any collapsed groups that contain matching tabs.</td>
+          </tr>
+          <tr>
+            <td><strong>Any / All</strong></td>
+            <td><strong>Any</strong> mode: clicking a chip deselects others (single-select). <strong>All</strong> mode: combine multiple chips with AND logic.</td>
           </tr>
         </table>
 

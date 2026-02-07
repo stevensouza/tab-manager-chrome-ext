@@ -1,4 +1,4 @@
-## Search Clear, Accordion Groups, and View Toggle (v2.5)
+## Search Clear, Accordion Groups, and View Toggle (v2.5, updated v2.6)
 
 ### Overview
 
@@ -85,3 +85,18 @@ updateToggleAllIcon()         // Update ▼/▶ on collapse-all button
 | Clear Filters effect | Does NOT expand groups | Collapse is a view preference, not a filter |
 | View toggle placement | Search row (right side) | Both controls shape what appears below; saves vertical space |
 | Collapse-all visibility | Hidden in All view | No groups to collapse in flat list |
+
+### v2.6 UI Redesign Changes
+
+The v2.6 redesign affected the search and view controls area:
+
+1. **Search icon** — Magnifying glass (🔍) inside search box for visual clarity
+2. **Always-visible controls** — Removed collapsible controls section; sort dropdown, chips, and action buttons are always visible
+3. **Compact header** — Single row: "Tab Manager" left, "N groups · N tabs ℹ️" right
+4. **Chip labels shortened** — Dupes, Audio, Pinned, Faves, Stale (descriptive tooltips retained)
+5. **[Any | All] mode toggle** — Segmented button replaces AND checkbox for chip combine mode
+6. **Close Dupes visibility** — Button only shown when duplicates exist (Option B)
+7. **Recently Closed inline header** — Section header with Show/Hide toggle replaces separate button
+8. **Dotted indent rail** — `.group-tabs` wrapper on ALL sections for consistent visual hierarchy
+9. **Age color key** — Compact colored dots row replaces text footer
+10. **"Open →" on favorites** — Hover label on favorite site items

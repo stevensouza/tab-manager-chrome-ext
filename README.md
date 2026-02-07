@@ -49,11 +49,11 @@ This Chrome extension helps you manage browser tabs with features like search, f
 - **Cross-device sync** - Favorites stored in `chrome.storage.sync`
 - **Smart visibility** - Favorites disappear from bottom section when the site is open
 
-### 🏷️ Filter Chips (v2.4)
-- **Always visible** - Row of pill buttons above search box (no need to expand controls)
-- **5 filter types** - Duplicates, Audio, Pinned, Favorites, Stale (1w+)
+### 🏷️ Filter Chips (v2.4, updated v2.6)
+- **Always visible** - Row of pill buttons below search box
+- **5 filter types** - Dupes, Audio, Pinned, Faves, Stale
 - **Single-select default** - Clicking one chip deselects others
-- **AND mode** - Check "AND" checkbox to combine multiple filters
+- **[Any | All] mode toggle** - Segmented button to combine multiple filters with AND logic
 - **Clean results** - Recently closed and favorites sections hidden when filtering
 
 ### 📂 Collapsible Groups & View Toggle (v2.5)
@@ -89,7 +89,7 @@ This Chrome extension helps you manage browser tabs with features like search, f
 - **Session history** - Track last 25 closed tabs with Chrome sessions API
 - **Group restoration** - Tabs restore to their original group if it still exists
 - **Group badges** - Colored badges show which group the tab will restore to
-- **Toggle visibility** - Show/hide recently closed section with button
+- **Inline toggle** - Section header with Show/Hide button (no separate controls needed)
 - **Click to restore** - Click any closed tab or restore button (↶) to reopen
 - **Search integration** - Search works on closed tabs (filter by title/URL)
 - **Smart fallback** - If original group deleted, tab opens ungrouped
@@ -98,7 +98,7 @@ This Chrome extension helps you manage browser tabs with features like search, f
 ### ❌ Close Operations
 - **Individual tab close** - Hover over any tab to see close button
 - **Close entire groups** - Hover over group header to close all tabs in group (confirms if >5 tabs)
-- **Close duplicates** - Removes duplicate tabs while keeping one of each URL
+- **Close duplicates** - Button appears only when duplicates exist, removes extras keeping one of each URL
   - Respects active filters (search, group, duplicate filter)
   - Keeps active tab if it's a duplicate, otherwise keeps first tab
 
@@ -126,126 +126,61 @@ This Chrome extension helps you manage browser tabs with features like search, f
 
 ## UI Preview
 
-### Default View (Controls Collapsed)
+### Groups View (Default)
 ```
 ┌────────────────────────────────────────────────────────────────┐
-│ Tab Manager                                               ℹ️  │
-│ by Steve Souza & Claude Code (01/26)                           │
+│ Tab Manager                          3 groups · 12 tabs    ℹ️  │
 │                                                                │
-│ Total groups: 3 | Total tabs: 12                               │
+│ [🔍 Search tabs and groups...       ✕] [▼] [Groups | All]    │
 │                                                                │
-│ [▼ Filters & Sort]                            ← Click to expand│
+│ [Dupes] [Audio] [Pinned] [Faves] [Stale]         [Any | All]  │
 │                                                                │
-│ [Duplicates] [Audio] [Pinned] [Favorites] [Stale(1w+)] ☐AND   │
-│                                                                │
-│ [Search tabs and groups...              ✕] [▼] [Groups | All] │
+│ [Sort: Groups A→Z + Recent ▼]  [Clear Filters] [Close Dupes]  │
+│ ─────────────────────────────────────────────────────────────  │
 │                                                                │
 │ ┌────────────────────────────────────────────────────────────┐ │
 │ │ ▼ 🔵 Work (5)                                          [×]│ │
 │ └────────────────────────────────────────────────────────────┘ │
-│   🌐📌🔈 GitHub - Pull Requests    [42]       [☆]  [×]       │
-│   📧 Gmail - Inbox           [2×] [89] 🔇     [★]  [×]       │
-│   📊 Google Sheets - Q1 Data      [156]       [☆]  [×]       │
-│   📧 Gmail - Inbox           [2×] [89]        [☆]  [×]       │
-│   📝 Notion - Projects                        [☆]  [×]       │
-│                                                                │
-│ ┌────────────────────────────────────────────────────────────┐ │
-│ │ ▼ 🟢 Research (4)                                      [×]│ │
-│ └────────────────────────────────────────────────────────────┘ │
-│   📄 Wikipedia - React                        [☆]  [×]       │
-│   🔍 Stack Overflow - Async Questions   [3×]  [☆]  [×]       │
-│   📰 Medium - Web Development                 [☆]  [×]       │
-│   🔍 Stack Overflow - Async Questions   [3×]  [☆]  [×]       │
-│                                                                │
-│ ┌────────────────────────────────────────────────────────────┐ │
-│ │ Ungrouped Tabs (3)                                         │ │
-│ └────────────────────────────────────────────────────────────┘ │
-│   🎵🔊 YouTube - Music                       [☆]  [×]       │
-│   🛒 Amazon - Shopping Cart        [2×]       [☆]  [×]       │
-│   🛒 Amazon - Shopping Cart        [2×]       [☆]  [×]       │
-│                                                                │
-│ ┌────────────────────────────────────────────────────────────┐ │
-│ │ Recently Closed (3)                                        │ │
-│ └────────────────────────────────────────────────────────────┘ │
-│   📰 CNN News Article        🔵Work      5m ago          [↶] │
-│   🔍 Stack Overflow Question              2h ago          [↶] │
-│   📧 Gmail - Old Email       🟢Research   1d ago          [↶] │
-│                                                                │
-│ ┌────────────────────────────────────────────────────────────┐ │
-│ │ ⭐ Favorite Sites (1)                                      │ │
-│ └────────────────────────────────────────────────────────────┘ │
-│   🐙 GitHub                                              [×] │
-│                                                                │
-│ Created by Steve Souza | Experimental Project                  │
-└────────────────────────────────────────────────────────────────┘
-```
-
-### With Controls Expanded
-```
-┌────────────────────────────────────────────────────────────────┐
-│ Tab Manager                                               ℹ️  │
-│ by Steve Souza & Claude Code (01/26)                           │
-│                                                                │
-│ Total groups: 3 | Total tabs: 12                               │
-│                                                                │
-│ [▲ Filters & Sort]                          ← Click to collapse│
-│                                                                │
-│ [Close Duplicates]  [Show Recently Closed (3)]                 │
-│ [Sort: Most Visited First ▼]          [Clear Filters]          │
-│                                                                │
-│ [Duplicates] [Audio] [Pinned] [Favorites] [Stale(1w+)] ☐AND   │
-│                                                                │
-│ [Search tabs and groups...              ✕] [▼] [Groups | All] │
-│                                                                │
-│ [Tab list appears here...]                                     │
-│                                                                │
-│ Created by Steve Souza | Experimental Project                  │
-└────────────────────────────────────────────────────────────────┘
-```
-
-### Groups View - Sort by Title (A→Z)
-```
-┌────────────────────────────────────────────────────────────────┐
-│ [Sort: Title (A→Z) ▼]                [Clear Filters]          │
-│                                                                │
-│ [Duplicates] [Audio] [Pinned] [Favorites] [Stale(1w+)] ☐AND   │
-│                                                                │
-│ [Search tabs and groups...              ✕] [▼] [Groups | All] │
-│                                           active ↗             │
-│ ┌────────────────────────────────────────────────────────────┐ │
-│ │ ▼ 🔵 Work (5)                                          [×]│ │
-│ └────────────────────────────────────────────────────────────┘ │
-│   📧 Gmail - Inbox           [2×] 🔇         [☆]  [×]       │
-│   📧 Gmail - Inbox           [2×]             [☆]  [×]       │
-│   🌐📌🔈 GitHub - Pull Requests               [☆]  [×]       │
-│   📊 Google Sheets - Q1 Data                  [☆]  [×]       │
-│   📝 Notion - Projects                        [☆]  [×]       │
+│ ┊  🌐📌🔈 GitHub - Pull Requests    [42]       [☆]  [×]     │
+│ ┊  📧 Gmail - Inbox           [2×] [89] 🔇     [★]  [×]     │
+│ ┊  📊 Google Sheets - Q1 Data      [156]       [☆]  [×]     │
+│ ┊  📧 Gmail - Inbox           [2×] [89]        [☆]  [×]     │
+│ ┊  📝 Notion - Projects                        [☆]  [×]     │
 │                                                                │
 │ ┌────────────────────────────────────────────────────────────┐ │
 │ │ ▶ 🟢 Research (4)                                      [×]│ │
 │ └────────────────────────────────────────────────────────────┘ │
-│   (collapsed — tabs hidden)                                    │
+│    (collapsed — tabs hidden)                                   │
 │                                                                │
-│ ┌────────────────────────────────────────────────────────────┐ │
-│ │ ▼ Ungrouped Tabs (3)                                       │ │
-│ └────────────────────────────────────────────────────────────┘ │
-│   🛒 Amazon - Shopping Cart        [2×]       [☆]  [×]       │
-│   🛒 Amazon - Shopping Cart        [2×]       [☆]  [×]       │
-│   🎵🔊 YouTube - Music                       [☆]  [×]       │
+│  Ungrouped Tabs (3)                                            │
+│ ┊  🎵🔊 YouTube - Music                       [☆]  [×]      │
+│ ┊  🛒 Amazon - Shopping Cart        [2×]       [☆]  [×]      │
+│ ┊  🛒 Amazon - Shopping Cart        [2×]       [☆]  [×]      │
 │                                                                │
-│ Created by Steve Souza | Experimental Project                  │
+│  Recently Closed (3)                         [Show ▾]          │
+│ ┊  📰 CNN News Article        🔵Work      5m ago         [↶] │
+│ ┊  🔍 Stack Overflow Question              2h ago         [↶] │
+│ ┊  📧 Gmail - Old Email       🟢Research   1d ago         [↶] │
+│                                                                │
+│  ⭐ Favorite Sites (1)                                         │
+│ ┊  🐙 GitHub                              Open →         [×] │
+│                                                                │
+│  ● <2h   ● <24h   ● <1w   ● >1w                               │
 └────────────────────────────────────────────────────────────────┘
 ```
 
 ### All View - Sort by Title (A→Z)
 ```
 ┌────────────────────────────────────────────────────────────────┐
-│ [Sort: Title (A→Z) ▼]                [Clear Filters]          │
+│ Tab Manager                          3 groups · 12 tabs    ℹ️  │
 │                                                                │
-│ [Duplicates] [Audio] [Pinned] [Favorites] [Stale(1w+)] ☐AND   │
+│ [🔍 Search tabs and groups...       ✕]        [Groups | All]  │
+│                                                    active ↗    │
+│ [Dupes] [Audio] [Pinned] [Faves] [Stale]         [Any | All]  │
 │                                                                │
-│ [Search tabs and groups...              ✕]     [Groups | All]  │
-│                                                   active ↗     │
+│ [Sort: Title (A→Z) ▼]  [Clear Filters]                        │
+│ ─────────────────────────────────────────────────────────────  │
+│                                                                │
 │   🛒 Amazon - Shopping Cart  🔘         [2×]  [☆]  [×]       │
 │   🛒 Amazon - Shopping Cart  🔘         [2×]  [☆]  [×]       │
 │   📧 Gmail - Inbox           🔵Work     [2×]  [★]  [×]       │
@@ -259,19 +194,21 @@ This Chrome extension helps you manage browser tabs with features like search, f
 │   📄 Wikipedia - React       🟢Research        [☆]  [×]       │
 │   🎵 YouTube - Music         🔘                [☆]  [×]       │
 │                                                                │
-│ Created by Steve Souza | Experimental Project                  │
+│  ● <2h   ● <24h   ● <1w   ● >1w                               │
 └────────────────────────────────────────────────────────────────┘
 ```
 
 ### Legend
-- [▼ Filters & Sort] - Toggle button (click to show/hide controls)
-- [▲ Filters & Sort] - Controls expanded (click to collapse)
-- [Duplicates] [Audio] etc. - Filter chips (click to filter, always visible)
-- ☐AND - Combine multiple chip filters (default: single-select)
+- [Dupes] [Audio] etc. - Filter chips (click to filter, always visible)
+- [Any | All] - Mode toggle: single-select vs. AND combine for chips
 - [Groups | All] - View toggle: grouped with headers vs. flat sorted list
 - [▼] button - Collapse/expand all groups (hidden in All view)
 - ▼/▶ on group headers - Expanded/collapsed group (click to toggle)
+- ┊ - Dotted indent rail (visual grouping for tabs under headers)
+- 🔍 in search box - Magnifying glass icon
 - ✕ in search box - Clear search text (appears when typing)
+- [Show ▾] / [Hide ▴] - Toggle recently closed tabs visibility
+- Open → - Hover label on favorite sites (click to open)
 - 🔵🟢🔴🟡 - Group color badges (in recently closed and All view)
 - 🔘 - Ungrouped tab badge (gray, appears in All view)
 - [×] - Close button (appears on hover for open tabs / favorite sites)
@@ -281,19 +218,17 @@ This Chrome extension helps you manage browser tabs with features like search, f
 - [2×][3×] - Duplicate count badge (orange, current tabs only)
 - [42][156] - Visit count badge (blue, total visits from browser history)
 - 5m ago, 2h ago, 1d ago - Time since tab was closed (recently closed section)
+- [Close Dupes] - Only visible when duplicates exist
 - 📌 - Pinned tab indicator (clickable toggle)
 - 🔇 - Muted tab (clickable toggle)
 - 🔊 - Playing audio (clickable to mute)
 - 🔈 - Silent tab, mute button (appears on hover)
 - Blue left border - Active tab indicator
-- 🟢 Green border - Recently accessed (≤2 hours)
-- 🟡 Yellow border - Accessed hours ago (≤24 hours)
-- 🟠 Orange border - Days old (≤1 week)
-- 🔴 Red border - Very old (>1 week)
+- ● <2h ● <24h ● <1w ● >1w - Age color key (green/yellow/orange/red)
 - Grayed out (grey) - Recently closed tab (not currently open)
 - Grayed out (gold border) - Favorite site not currently open
 - Favicon emojis - Website icons (🌐📧📊🔍📄📰🎵🛒)
-- ℹ️ - Info icon (click to see help modal)
+- ℹ️ - Info icon (click to see help modal with attribution)
 
 ## Installation
 
@@ -342,15 +277,15 @@ This Chrome extension helps you manage browser tabs with features like search, f
 
 ### Filter Chips
 
-**Quick Filters (always visible above search box):**
-- **Duplicates** - Show only tabs with duplicate URLs
+**Quick Filters (always visible below search box):**
+- **Dupes** - Show only tabs with duplicate URLs
 - **Audio** - Show only tabs playing or muting audio
 - **Pinned** - Show only pinned tabs
-- **Favorites** - Show only favorited sites (open + unopened grayed out)
-- **Stale (1w+)** - Show only tabs not accessed in over a week
+- **Faves** - Show only favorited sites (open + unopened grayed out)
+- **Stale** - Show only tabs not accessed in over a week
 
-**Single-select (default):** Clicking one chip deselects others.
-**AND mode:** Check the "AND" checkbox to combine multiple filters.
+**Single-select (Any, default):** Clicking one chip deselects others.
+**AND mode (All):** Click "All" in the mode toggle to combine multiple filters.
 
 When chips are active, recently closed and favorites sections are hidden for a clean filtered view.
 
@@ -377,27 +312,23 @@ When chips are active, recently closed and favorites sections are hidden for a c
 3. Click again to show all tabs
 
 **Close Duplicates:**
-1. Expand "Filters & Sort" controls
-2. Click "Close Duplicates" button
-3. Keeps one copy of each duplicate URL
-4. Preferentially keeps the active tab
-5. Respects all active filters (search, group, chips)
+1. "Close Dupes" button appears in the action row when duplicates exist
+2. Click to remove duplicate tabs, keeping one copy of each URL
+3. Preferentially keeps the active tab
+4. Respects all active filters (search, group, chips)
 
 ### Filter Combinations
 
-Filters work together (AND logic when AND checkbox is checked):
-- Search + Group filter → Shows tabs matching both
-- Search + Duplicates chip → Shows duplicates matching search
+Filters work together (AND logic when "All" mode is selected):
+- Search + Dupes chip → Shows duplicates matching search
 - Multiple chips + Search → All conditions must match
-
-Click group header again to clear group filter.
 
 ### Recently Closed Tabs
 
 **View Recently Closed:**
-1. Click "Filters & Sort" to expand controls
-2. Click "Show Recently Closed (X)" button to toggle visibility
-3. Recently Closed section appears at bottom (after ungrouped tabs)
+1. Recently Closed section header always visible (when closed tabs exist)
+2. Click "Show ▾" to expand, "Hide ▴" to collapse
+3. Section appears at bottom (after ungrouped tabs)
 
 **Restore Tabs:**
 - Click any closed tab to restore it
@@ -471,6 +402,24 @@ tab-manager-chrome-ext/
 - Can be removed at any time
 
 ## Changelog
+
+**Version 2.6 (2026-02-06)**
+- 🎨 **REDESIGN:** Compact 1-row header (title left, "N groups · N tabs ℹ️" right)
+- 🎨 **REDESIGN:** Removed collapsible controls — sort, chips, and actions always visible
+- 🔍 **NEW:** Search box magnifying glass icon
+- 🏷️ **NEW:** Shortened chip labels (Dupes, Audio, Pinned, Faves, Stale)
+- 🏷️ **NEW:** Segmented [Any | All] mode toggle replaces AND checkbox
+- ❌ **NEW:** Close Dupes button only appears when duplicates exist (saves space)
+- ↶ **NEW:** Recently Closed inline section header with Show/Hide toggle
+- 🎨 **NEW:** Dotted indent rail on ALL sections (groups, ungrouped, recently closed, favorites)
+- ⭐ **NEW:** "Open →" hover label on favorite sites
+- 🎨 **NEW:** Age color key footer (●<2h ●<24h ●<1w ●>1w) replaces text footer
+- ℹ️ Attribution moved to help modal
+- 🎨 8px border-radius, 4px age borders, tighter spacing throughout
+- 🧹 **REMOVED:** Collapsible controls section and toggle button
+- 🧹 **REMOVED:** Separate "Show Recently Closed" button
+- 🧹 **REMOVED:** AND checkbox (replaced by mode toggle)
+- 🧹 **REMOVED:** Text footer (replaced by age key)
 
 **Version 2.5 (2026-02-06)**
 - 🔍 **NEW:** Search clear X button — clears search text in one click

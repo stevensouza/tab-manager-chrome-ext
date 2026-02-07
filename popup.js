@@ -59,8 +59,7 @@ let recentlyClosedTabs = [];
 // Toggle state for showing/hiding recently closed tabs (persisted in localStorage)
 let closedTabsVisible = localStorage.getItem('closedTabsVisible') === 'true';
 
-// Collapsed state for filter/sort controls section (persisted in localStorage)
-let controlsCollapsed = localStorage.getItem('controlsCollapsed') === 'true';
+// controlsCollapsed removed in v2.6 — controls are always visible now
 
 // Favorite sites - stored in chrome.storage.sync for cross-device sync
 // Each entry: {url: "https://mail.google.com", title: "Gmail", favIconUrl: "..."}
@@ -749,14 +748,19 @@ function renderTabs(searchTerm = '') {
 
     groupContainer.appendChild(groupHeader);
 
+    // Wrap tabs in group-tabs div for dotted indent rail
+    const groupTabsDiv = document.createElement('div');
+    groupTabsDiv.className = 'group-tabs';
+
     // Only render individual tabs if group is not collapsed
     if (!isCollapsed) {
       filteredTabs.forEach(tab => {
         const tabItem = createTabElement(tab);
-        groupContainer.appendChild(tabItem);
+        groupTabsDiv.appendChild(tabItem);
       });
     }
 
+    groupContainer.appendChild(groupTabsDiv);
     tabList.appendChild(groupContainer);
   });
 
@@ -783,10 +787,13 @@ function renderTabs(searchTerm = '') {
 
     ungroupedContainer.appendChild(ungroupedHeader);
 
+    const ungroupedTabsDiv = document.createElement('div');
+    ungroupedTabsDiv.className = 'group-tabs';
     filteredUngrouped.forEach(tab => {
       const tabItem = createTabElement(tab);
-      ungroupedContainer.appendChild(tabItem);
+      ungroupedTabsDiv.appendChild(tabItem);
     });
+    ungroupedContainer.appendChild(ungroupedTabsDiv);
 
     tabList.appendChild(ungroupedContainer);
   }
@@ -809,8 +816,8 @@ function renderTabs(searchTerm = '') {
  * Closed tabs respect search filter (title/URL match).
  */
 function renderRecentlyClosedTabs() {
-  if (!closedTabsVisible || recentlyClosedTabs.length === 0) {
-    return; // Don't render if hidden or empty
+  if (recentlyClosedTabs.length === 0) {
+    return; // Don't render if no closed tabs
   }
 
   // Hide when any chip filter is active — chips filter open tabs only
@@ -818,44 +825,59 @@ function renderRecentlyClosedTabs() {
 
   const tabList = document.getElementById('tabList');
 
-  // Create container (similar to ungrouped-container)
+  // Create container
   const closedContainer = document.createElement('div');
   closedContainer.className = 'closed-tabs-container';
 
-  // Header
+  // Inline clickable header with Show/Hide toggle
   const header = document.createElement('div');
-  header.className = 'closed-tabs-header';
+  header.className = 'closed-section-header';
 
-  const headerText = document.createElement('span');
-  headerText.textContent = 'Recently Closed';
-  header.appendChild(headerText);
+  const headerLeft = document.createElement('span');
+  headerLeft.textContent = 'Recently Closed ';
+  const countSpan = document.createElement('span');
+  countSpan.className = 'tab-count';
+  countSpan.textContent = '(' + recentlyClosedTabs.length + ')';
+  headerLeft.appendChild(countSpan);
+  header.appendChild(headerLeft);
 
-  const tabCountSpan = document.createElement('span');
-  tabCountSpan.className = 'tab-count';
-  tabCountSpan.textContent = ` (${recentlyClosedTabs.length})`;
-  header.appendChild(tabCountSpan);
+  const toggleBtn = document.createElement('button');
+  toggleBtn.className = 'show-toggle';
+  toggleBtn.textContent = closedTabsVisible ? 'Hide \u25B4' : 'Show \u25BE';
+  toggleBtn.addEventListener('click', () => {
+    closedTabsVisible = !closedTabsVisible;
+    localStorage.setItem('closedTabsVisible', closedTabsVisible.toString());
+    renderTabs(currentSearchTerm);
+  });
+  header.appendChild(toggleBtn);
 
   closedContainer.appendChild(header);
 
-  // Apply search filter to closed tabs
-  const lowerSearch = currentSearchTerm.toLowerCase();
-  const matchesSearch = (tab) => {
-    if (!currentSearchTerm) return true;
-    const matchesTitle = tab.title.toLowerCase().includes(lowerSearch);
-    const matchesUrl = tab.url.toLowerCase().includes(lowerSearch);
-    const matchesGroup = tab.groupInfo &&
-      (tab.groupInfo.groupTitle?.toLowerCase().includes(lowerSearch) ||
-       tab.groupInfo.groupColor?.toLowerCase().includes(lowerSearch));
-    return matchesTitle || matchesUrl || matchesGroup;
-  };
+  // Only render tabs when visible
+  if (closedTabsVisible) {
+    // Apply search filter to closed tabs
+    const lowerSearch = currentSearchTerm.toLowerCase();
+    const matchesSearch = (tab) => {
+      if (!currentSearchTerm) return true;
+      const matchesTitle = tab.title.toLowerCase().includes(lowerSearch);
+      const matchesUrl = tab.url.toLowerCase().includes(lowerSearch);
+      const matchesGroup = tab.groupInfo &&
+        (tab.groupInfo.groupTitle?.toLowerCase().includes(lowerSearch) ||
+         tab.groupInfo.groupColor?.toLowerCase().includes(lowerSearch));
+      return matchesTitle || matchesUrl || matchesGroup;
+    };
 
-  const filteredClosedTabs = recentlyClosedTabs.filter(matchesSearch);
+    const filteredClosedTabs = recentlyClosedTabs.filter(matchesSearch);
 
-  // Render each closed tab
-  filteredClosedTabs.forEach(closedTab => {
-    const tabItem = createClosedTabElement(closedTab);
-    closedContainer.appendChild(tabItem);
-  });
+    // Wrap in group-tabs div for dotted indent rail
+    const groupTabsDiv = document.createElement('div');
+    groupTabsDiv.className = 'group-tabs';
+    filteredClosedTabs.forEach(closedTab => {
+      const tabItem = createClosedTabElement(closedTab);
+      groupTabsDiv.appendChild(tabItem);
+    });
+    closedContainer.appendChild(groupTabsDiv);
+  }
 
   // Append at the END of tabList (after all groups/ungrouped)
   tabList.appendChild(closedContainer);
@@ -914,11 +936,14 @@ function renderFavoriteSites() {
 
   container.appendChild(header);
 
-  // Render each favorite
+  // Wrap in group-tabs div for dotted indent rail
+  const groupTabsDiv = document.createElement('div');
+  groupTabsDiv.className = 'group-tabs';
   unopenedFavorites.forEach(site => {
     const element = createFavoriteSiteElement(site);
-    container.appendChild(element);
+    groupTabsDiv.appendChild(element);
   });
+  container.appendChild(groupTabsDiv);
 
   tabList.appendChild(container);
 }
@@ -948,6 +973,12 @@ function createFavoriteSiteElement(site) {
   titleSpan.className = 'tab-title';
   titleSpan.textContent = site.title;
   tabItem.appendChild(titleSpan);
+
+  // "Open →" label (visible on hover)
+  const openLabel = document.createElement('span');
+  openLabel.className = 'open-link';
+  openLabel.textContent = 'Open \u2192';
+  tabItem.appendChild(openLabel);
 
   // Remove button (hidden by default, appears on hover)
   const removeBtn = document.createElement('button');
@@ -1250,10 +1281,11 @@ function clearFilters() {
     chip.classList.remove('active');
   });
 
-  // Reset combine mode
+  // Reset combine mode to single-select (Any)
   combineFiltersMode = false;
-  const combineToggle = document.getElementById('combineFiltersToggle');
-  if (combineToggle) combineToggle.checked = false;
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === 'any');
+  });
 
   saveChipState();
 
@@ -1327,9 +1359,13 @@ function restoreChipState() {
       if (filterMap[filter]) chip.classList.add('active');
     });
 
-    // Update combine toggle UI
-    const combineToggle = document.getElementById('combineFiltersToggle');
-    if (combineToggle) combineToggle.checked = combineFiltersMode;
+    // Update mode toggle UI (Any/All buttons)
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.classList.toggle('active',
+        (combineFiltersMode && btn.dataset.mode === 'all') ||
+        (!combineFiltersMode && btn.dataset.mode === 'any')
+      );
+    });
   } catch {
     // Ignore corrupt data
   }
@@ -1684,48 +1720,16 @@ async function loadTabs() {
   document.getElementById('tabCount').textContent = allTabs.length;
   document.getElementById('groupCount').textContent = allGroups.length;
 
-  // Update closed tabs count (will be 0 if element doesn't exist yet)
-  const closedTabsCountEl = document.getElementById('closedTabsCount');
-  if (closedTabsCountEl) {
-    closedTabsCountEl.textContent = recentlyClosedTabs.length;
-  }
-
-  // Update favorites count - show only unopened favorites
-  const openUrls = new Set(allTabs.map(t => t.url));
-  const unopenedFavCount = favoriteSites.filter(fav => !openUrls.has(fav.url)).length;
-  const favCountEl = document.getElementById('favoriteSitesCount');
-  if (favCountEl) {
-    favCountEl.textContent = unopenedFavCount;
-  }
-
-  // Enable/disable "Close Duplicates" button based on whether duplicates exist
+  // Show/hide "Close Duplicates" button based on whether duplicates exist (Option B)
   const hasDuplicates = Object.values(urlCounts).some(count => count > 1);
-  const closeBtn = document.getElementById('closeDuplicatesBtn');
-  closeBtn.disabled = !hasDuplicates;
+  const closeDupesBtn = document.getElementById('closeDuplicatesBtn');
+  closeDupesBtn.style.display = hasDuplicates ? '' : 'none';
 
   // Render the UI
   renderTabs(currentSearchTerm);
 }
 
-/**
- * Toggle the visibility of filter/sort controls section.
- * State is persisted in localStorage so it remembers user preference.
- */
-function toggleControls() {
-  controlsCollapsed = !controlsCollapsed;
-  localStorage.setItem('controlsCollapsed', controlsCollapsed);
-
-  const section = document.getElementById('controlsSection');
-  const button = document.getElementById('toggleControls');
-
-  if (controlsCollapsed) {
-    section.classList.add('collapsed');
-    button.classList.remove('expanded');
-  } else {
-    section.classList.remove('collapsed');
-    button.classList.add('expanded');
-  }
-}
+// toggleControls() removed in v2.6 — controls are always visible now
 
 /*
  * ============================================================================
@@ -1764,21 +1768,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   // Hide collapse-all button in All view
   collapseAllBtn.classList.toggle('hidden', viewMode === 'all');
-
-  // Initialize collapsible controls state
-  const section = document.getElementById('controlsSection');
-  const button = document.getElementById('toggleControls');
-
-  if (controlsCollapsed) {
-    section.classList.add('collapsed');
-    button.classList.remove('expanded');
-  } else {
-    section.classList.remove('collapsed');
-    button.classList.add('expanded');
-  }
-
-  // Add toggle listener for collapsible controls
-  button.addEventListener('click', toggleControls);
 
   // Collapse/Expand All groups toggle
   collapseAllBtn.addEventListener('click', () => {
@@ -1845,18 +1834,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // "Close Duplicates" button
   document.getElementById('closeDuplicatesBtn').addEventListener('click', closeDuplicateTabs);
 
-  // Toggle recently closed tabs visibility
-  const closedTabsToggle = document.getElementById('closedTabsToggle');
-  if (closedTabsVisible) {
-    closedTabsToggle.classList.add('active');
-  }
-  closedTabsToggle.addEventListener('click', () => {
-    closedTabsVisible = !closedTabsVisible;
-    localStorage.setItem('closedTabsVisible', closedTabsVisible.toString());
-    closedTabsToggle.classList.toggle('active', closedTabsVisible);
-    renderTabs(currentSearchTerm);
-  });
-
   // Filter chips - each toggles a filter and re-renders
   const chipFilterMap = {
     dupes: () => duplicateFilterActive,
@@ -1903,11 +1880,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Combine filters toggle
-  const combineToggle = document.getElementById('combineFiltersToggle');
-  if (combineToggle) {
-    combineToggle.addEventListener('change', (e) => {
-      combineFiltersMode = e.target.checked;
+  // Mode toggle: Any (single-select) vs All (AND combine)
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode;
+      combineFiltersMode = (mode === 'all');
+      // Update button active states
+      document.querySelectorAll('.mode-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.mode === mode);
+      });
       if (!combineFiltersMode) {
         // Switching to single-select: keep only the first active chip
         const activeChips = document.querySelectorAll('.filter-chip.active');
@@ -1928,7 +1909,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       saveChipState();
     });
-  }
+  });
 
   // Sort dropdown - Save preference and re-render
   document.getElementById('sortDropdown').addEventListener('change', (e) => {

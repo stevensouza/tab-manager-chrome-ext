@@ -25,168 +25,59 @@ body {
 }
 
 .container {
-  padding: 16px;
-  padding-bottom: 8px;
+  padding: 12px 14px 8px;
 }
 
 /*
  * ============================================================================
- * HEADER & ATTRIBUTION
+ * HEADER (compact single row)
  * ============================================================================
  */
 
-h1 {
-  margin: 0 0 4px 0;
-  font-size: 18px;
-  color: #333;
+.header-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.header-row h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+  letter-spacing: -0.2px;
+}
+
+.header-stats {
+  font-size: 12px;
+  color: #9aa0a6;
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
+.header-stats span#groupCount,
+.header-stats span#tabCount {
+  color: #1A73E8;
+  font-weight: 600;
+}
+
+.stats-dot {
+  color: #ddd;
+}
+
 .info-icon {
-  font-size: 14px;
-  cursor: help;
-  opacity: 0.6;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+  opacity: 0.5;
   transition: opacity 0.2s;
 }
 
 .info-icon:hover {
   opacity: 1;
 }
-
-.subtitle {
-  margin: 0 0 8px 0;
-  font-size: 12px;
-  color: #888;
-}
-
-.total {
-  margin: 0 0 12px 0;
-  color: #666;
-}
-
-/* Compact stats line - single line for tab/group counts */
-.stats-line {
-  font-size: 14px;
-  color: #666;
-  margin: 0 0 12px 0;
-  text-align: center;
-}
-
-.stats-line span {
-  color: #1A73E8;
-  font-weight: 600;
-}
-
-
-#tabCount {
-  font-weight: bold;
-  color: #4688F1;  /* Blue accent matching Chrome UI */
-}
-
-/*
- * ============================================================================
- * DUPLICATE CONTROLS
- * ============================================================================
- * Two-button layout: Toggle filter + Close duplicates action
- */
-
-.duplicate-controls {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.close-duplicates-btn {
-  flex: 1;  /* Equal width buttons */
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-/* Close duplicates button - Orange to indicate destructive action */
-.close-duplicates-btn {
-  background: #E8710A;  /* Orange matches duplicate badges */
-  color: white;
-  border-color: #E8710A;
-}
-
-.close-duplicates-btn:hover:not(:disabled) {
-  background: #D66609;  /* Darker orange on hover */
-  border-color: #D66609;
-}
-
-.close-duplicates-btn:disabled {
-  background: #dadce0;  /* Grey when no duplicates exist */
-  color: #80868b;
-  border-color: #dadce0;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-/*
- * ============================================================================
- * SORT AND FILTER CONTROLS
- * ============================================================================
- */
-
-.sort-filter-controls {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.sort-dropdown {
-  flex: 1;  /* Takes most of the space */
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 13px;
-  background: #f8f9fa;
-  color: #5f6368;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.sort-dropdown:hover {
-  background: #e8eaed;
-  border-color: #ccc;
-}
-
-.sort-dropdown:focus {
-  outline: none;
-  border-color: #4688F1;
-  background: white;
-}
-
-.clear-filters-btn {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 500;
-  background: #f8f9fa;
-  color: #5f6368;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;  /* Keep text on one line */
-}
-
-.clear-filters-btn:hover:not(:disabled) {
-  background: #e8eaed;
-  border-color: #ccc;
-}
-
-.clear-filters-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 
 /*
  * ============================================================================
@@ -199,7 +90,7 @@ h1 {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .search-container {
@@ -208,19 +99,34 @@ h1 {
   min-width: 0;  /* Allow shrinking for flexbox */
 }
 
+.search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: #9aa0a6;
+  pointer-events: none;
+}
+
 .search-box {
   width: 100%;
-  padding: 8px 30px 8px 12px;  /* Right padding for clear button */
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
+  padding: 7px 28px 7px 32px;  /* Left padding for icon, right for clear button */
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 13px;
   box-sizing: border-box;
   height: 34px;
+  background: #f8f9fa;
+  color: #333;
+  transition: all 0.15s;
 }
 
 .search-box:focus {
   outline: none;
-  border-color: #4688F1;  /* Blue border when focused */
+  border-color: #1A73E8;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.08);
 }
 
 .search-clear-btn {
@@ -233,7 +139,7 @@ h1 {
   border: none;
   background: none;
   color: #80868b;
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1;
   cursor: pointer;
   border-radius: 50%;
@@ -254,8 +160,8 @@ h1 {
   flex-shrink: 0;
   width: 28px;
   height: 34px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
   background: #f8f9fa;
   cursor: pointer;
   font-size: 10px;
@@ -280,26 +186,27 @@ h1 {
 .view-toggle {
   flex-shrink: 0;
   display: flex;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
   overflow: hidden;
   height: 34px;
+  background: #f8f9fa;
 }
 
 .view-toggle-btn {
   border: none;
-  background: #f8f9fa;
-  padding: 0 10px;
+  background: transparent;
+  padding: 0 11px;
   font-size: 12px;
   font-weight: 500;
-  color: #5f6368;
+  color: #80868b;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
   white-space: nowrap;
 }
 
 .view-toggle-btn:first-child {
-  border-right: 1px solid #ddd;
+  border-right: 1px solid #e0e0e0;
 }
 
 .view-toggle-btn:hover:not(.active) {
@@ -313,53 +220,177 @@ h1 {
 
 /*
  * ============================================================================
- * COLLAPSIBLE CONTROLS
+ * FILTER CHIPS
  * ============================================================================
- * Toggle button and collapsible section for filters/sort options
+ * Row of small toggle pills for quick filtering.
+ * Always visible (not inside any collapsible section).
  */
 
-/* Toggle button for collapsible controls */
-.toggle-controls-btn {
-  width: 100%;
-  padding: 8px 12px;
-  margin-bottom: 12px;
-  background: #f0f0f0;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  cursor: pointer;
+.filter-chips-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.filter-chips {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.filter-chip {
+  padding: 3px 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 16px;
+  font-size: 11px;
   font-weight: 500;
-  color: #333;
-  transition: background 0.2s;
+  cursor: pointer;
+  background: #fff;
+  color: #5f6368;
+  transition: all 0.15s;
 }
 
-.toggle-controls-btn:hover {
-  background: #e8e8e8;
+.filter-chip:hover {
+  background: #f1f3f4;
+  border-color: #ccc;
 }
 
-.toggle-controls-btn .caret {
-  transition: transform 0.2s;
-  font-size: 10px;
+.filter-chip.active {
+  background: #1A73E8;
+  color: white;
+  border-color: #1A73E8;
 }
 
-.toggle-controls-btn.expanded .caret {
-  transform: rotate(-180deg);
+.filter-chip.active:hover {
+  background: #1765CC;
+  border-color: #1765CC;
 }
 
-/* Collapsible controls section */
-.controls-section {
-  max-height: 500px;
+/* Any/All mode toggle (replaces AND checkbox) */
+.mode-toggle {
+  flex-shrink: 0;
+  display: flex;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
   overflow: hidden;
-  transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
-  opacity: 1;
+  height: 24px;
+  background: #f8f9fa;
 }
 
-.controls-section.collapsed {
-  max-height: 0;
-  opacity: 0;
+.mode-btn {
+  border: none;
+  background: transparent;
+  padding: 0 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #9aa0a6;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transition: all 0.15s;
+}
+
+.mode-btn:first-child {
+  border-right: 1px solid #e0e0e0;
+}
+
+.mode-btn.active {
+  background: #5f6368;
+  color: #fff;
+}
+
+.mode-btn:hover:not(.active) {
+  color: #5f6368;
+}
+
+/*
+ * ============================================================================
+ * ACTION ROW (Sort + Close Dupes — always visible)
+ * ============================================================================
+ */
+
+.action-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.sort-dropdown {
+  flex: 1;
+  padding: 5px 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 12px;
+  background: #f8f9fa;
+  color: #5f6368;
+  cursor: pointer;
+  height: 28px;
+  transition: all 0.2s;
+}
+
+.sort-dropdown:hover {
+  background: #e8eaed;
+  border-color: #ccc;
+}
+
+.sort-dropdown:focus {
+  outline: none;
+  border-color: #1A73E8;
+  background: white;
+}
+
+.clear-filters-btn {
+  padding: 5px 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  background: #f8f9fa;
+  color: #5f6368;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  height: 28px;
+}
+
+.clear-filters-btn:hover:not(:disabled) {
+  background: #e8eaed;
+  border-color: #ccc;
+}
+
+.clear-filters-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Close Dupes button - only shown when duplicates exist */
+.close-dupes-btn {
+  padding: 5px 12px;
+  border: 1px solid #E8710A;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #E8710A;
+  color: white;
+  height: 28px;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.close-dupes-btn:hover {
+  background: #D66609;
+  border-color: #D66609;
+}
+
+/* Divider between controls and tab list */
+.divider {
+  height: 1px;
+  background: #eee;
+  margin-bottom: 8px;
 }
 
 /*
@@ -371,8 +402,14 @@ h1 {
 #tabList {
   max-height: 400px;  /* Scrollable if many tabs */
   overflow-y: auto;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
+
+/* Scrollbar styling */
+#tabList::-webkit-scrollbar { width: 5px; }
+#tabList::-webkit-scrollbar-track { background: transparent; }
+#tabList::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+#tabList::-webkit-scrollbar-thumb:hover { background: #ccc; }
 
 /*
  * ============================================================================
@@ -381,18 +418,18 @@ h1 {
  */
 
 .group-container {
-  margin-bottom: 12px;
+  margin-bottom: 6px;
 }
 
 /* Group header - Colored bar matching Chrome's native tab group colors */
 .group-header {
   display: flex;
   align-items: center;
-  padding: 6px 12px;
-  margin-bottom: 4px;
-  border-radius: 4px;
+  padding: 5px 10px;
+  margin-bottom: 2px;
+  border-radius: 8px;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 12px;
   color: white;
   cursor: pointer;  /* Clickable to collapse/expand group */
   user-select: none;
@@ -400,15 +437,15 @@ h1 {
 }
 
 .group-header:hover {
-  opacity: 0.85;
+  filter: brightness(0.9);
 }
 
 /* Collapse/expand chevron indicator on group headers */
 .group-chevron {
-  font-size: 10px;
+  font-size: 9px;
   margin-right: 6px;
   display: inline-block;
-  width: 12px;
+  width: 10px;
   text-align: center;
   flex-shrink: 0;
 }
@@ -416,7 +453,12 @@ h1 {
 /* Collapsed group - header only, reduced bottom margin */
 .group-container.collapsed .group-header {
   margin-bottom: 0;
-  opacity: 0.9;
+  opacity: 0.88;
+}
+
+/* Hide group-tabs when collapsed */
+.group-container.collapsed .group-tabs {
+  display: none;
 }
 
 .group-name {
@@ -424,8 +466,8 @@ h1 {
 }
 
 .tab-count {
-  font-size: 11px;
-  opacity: 0.9;
+  font-size: 10px;
+  opacity: 0.85;
   margin-left: 4px;
 }
 
@@ -437,7 +479,7 @@ h1 {
 }
 
 .group-header:hover .close-btn {
-  opacity: 1;  /* Reveal on hover */
+  opacity: 0.8;
 }
 
 /*
@@ -457,6 +499,21 @@ h1 {
 
 /*
  * ============================================================================
+ * DOTTED INDENT RAIL
+ * ============================================================================
+ * Applied to all sections: groups, ungrouped, recently closed, favorites.
+ * Creates visual nesting of tab items under their section headers.
+ */
+
+.group-tabs {
+  padding-left: 8px;
+  margin-left: 6px;
+  border-left: 1.5px dotted #ddd;
+  margin-bottom: 6px;
+}
+
+/*
+ * ============================================================================
  * TAB ITEM STYLING
  * ============================================================================
  */
@@ -464,24 +521,25 @@ h1 {
 .tab-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  margin: 2px 0;
-  background: #f8f9fa;
-  border-radius: 4px;
-  border-left: 3px solid transparent;  /* Space reserved for active indicator */
+  gap: 7px;
+  padding: 6px 10px;
+  margin: 1px 0;
+  background: #fafafa;
+  border-radius: 6px;
+  border-left: 4px solid transparent;  /* Thicker border for age color (up from 3px) */
   cursor: pointer;
   color: #333;
+  font-size: 13px;
   transition: background 0.1s, border-color 0.1s;
   position: relative;
 }
 
 .tab-item:hover {
-  background: #e8eaed;  /* Light grey hover */
+  background: #eef0f2;
 }
 
 .tab-item:active {
-  background: #dadce0;  /* Darker grey when clicked */
+  background: #dadce0;
 }
 
 /*
@@ -490,12 +548,12 @@ h1 {
  * Blue left border + light blue background.
  */
 .tab-item.active {
-  background: #e8f0fe;  /* Light blue background */
-  border-left-color: #1A73E8;  /* Blue left border */
+  background: #e8f0fe;
+  border-left-color: #1A73E8;
 }
 
 .tab-item.active:hover {
-  background: #d2e3fc;  /* Slightly darker blue on hover */
+  background: #d2e3fc;
 }
 
 /*
@@ -508,47 +566,49 @@ h1 {
 .favicon {
   width: 16px;
   height: 16px;
-  flex-shrink: 0;  /* Don't shrink if title is long */
+  flex-shrink: 0;
   object-fit: contain;
+  border-radius: 3px;
 }
 
 /* Tab title - Truncates if too long */
 .tab-title {
-  flex: 1;  /* Takes up remaining space */
+  flex: 1;
   overflow: hidden;
-  text-overflow: ellipsis;  /* Shows "..." if truncated */
-  white-space: nowrap;  /* Single line only */
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
 }
 
 /* Duplicate badge - Shows "2×", "3×", etc. */
 .duplicate-badge {
-  flex-shrink: 0;  /* Don't shrink */
-  padding: 2px 6px;
-  background: #E8710A;  /* Orange to draw attention */
+  flex-shrink: 0;
+  padding: 1px 5px;
+  background: #E8710A;
   color: white;
-  border-radius: 10px;  /* Rounded pill shape */
-  font-size: 10px;
+  border-radius: 8px;
+  font-size: 9px;
   font-weight: 600;
 }
 
 /* Visit count badge - Shows total visits from browser history */
 .visit-badge {
-  flex-shrink: 0;  /* Don't shrink */
-  padding: 2px 6px;
-  background: #1A73E8;  /* Blue to differentiate from orange duplicates */
+  flex-shrink: 0;
+  padding: 1px 5px;
+  background: #1A73E8;
   color: white;
-  border-radius: 10px;  /* Rounded pill shape */
-  font-size: 10px;
+  border-radius: 8px;
+  font-size: 9px;
   font-weight: 600;
-  margin-left: 8px;
+  margin-left: 4px;
 }
 
 /* Tighter spacing when badges stack */
 .duplicate-badge + .visit-badge {
-  margin-left: 4px;
+  margin-left: 3px;
 }
 
-/* Group badge - Shows group name when globally sorted */
+/* Group badge - Shows group name when in All view */
 .group-badge {
   flex-shrink: 0;
   padding: 2px 8px;
@@ -578,7 +638,7 @@ h1 {
 
 /*
  * Status badges (pinned, audio, muted)
- * Now interactive buttons that toggle tab state
+ * Interactive buttons that toggle tab state
  */
 .status-badge {
   flex-shrink: 0;
@@ -594,62 +654,56 @@ h1 {
 
 .status-badge:hover {
   background: rgba(0, 0, 0, 0.08);
-  transform: scale(1.1);  /* Slightly larger on hover */
+  transform: scale(1.1);
 }
 
 .status-badge:active {
-  transform: scale(0.95);  /* Shrink slightly when clicked */
+  transform: scale(0.95);
 }
 
 /* Pinned badge states */
 .pinned-badge.pinned {
-  opacity: 0.9;  /* Always visible when pinned */
+  opacity: 0.9;
 }
 
 .pinned-badge.unpinned {
-  opacity: 0;  /* Hidden until hover */
+  opacity: 0;
 }
 
-/* Show unpin button on hover (like close button) */
 .tab-item:hover .pinned-badge.unpinned {
-  opacity: 0.5;  /* Show pin option on hover */
+  opacity: 0.5;
 }
 
 .pinned-badge.unpinned:hover {
-  opacity: 0.85 !important;  /* Brighter when hovering the button itself */
+  opacity: 0.85 !important;
 }
 
 /* Audio badge states */
 .audio-badge.muted {
-  opacity: 0.9;  /* Always visible when muted */
+  opacity: 0.9;
 }
 
 .audio-badge.audible {
-  opacity: 0.9;  /* Always visible when playing audio */
+  opacity: 0.9;
 }
 
 .audio-badge.silent {
-  opacity: 0;  /* Hidden until hover (no audio) */
+  opacity: 0;
 }
 
-/* Show mute button on hover (for silent tabs) */
 .tab-item:hover .audio-badge.silent {
-  opacity: 0.5;  /* Show mute option on hover */
+  opacity: 0.5;
 }
 
 .audio-badge.silent:hover {
-  opacity: 0.85 !important;  /* Brighter when hovering the button itself */
+  opacity: 0.85 !important;
 }
 
 /*
  * ============================================================================
  * AGE-BASED COLOR CODING
  * ============================================================================
- * Color-codes tab border based on last access time (4 levels):
- * - Green: ≤ 2 hours
- * - Yellow: ≤ 24 hours
- * - Orange: ≤ 1 week
- * - Red: > 1 week
+ * Color-codes tab border based on last access time (4 levels).
  * Active tab always gets blue border regardless of age.
  */
 
@@ -671,7 +725,7 @@ h1 {
 
 /* Active tab overrides age color - blue always wins */
 .tab-item.active {
-  border-left-color: #1A73E8 !important;  /* Blue always wins */
+  border-left-color: #1A73E8 !important;
 }
 
 /*
@@ -681,12 +735,12 @@ h1 {
  */
 .close-btn {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border: none;
   background: none;
   color: inherit;
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1;
   cursor: pointer;
   border-radius: 3px;
@@ -694,19 +748,19 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;  /* Hidden by default */
+  opacity: 0;
   transition: opacity 0.15s, background 0.1s;
 }
 
 /* Reveal close button on tab hover */
 .tab-item:hover .close-btn {
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 /* Full opacity when hovering close button itself */
 .close-btn:hover {
   opacity: 1 !important;
-  background: rgba(0, 0, 0, 0.1);  /* Subtle background on hover */
+  background: rgba(0, 0, 0, 0.08);
 }
 
 /* Slightly darker background for group header close button */
@@ -718,28 +772,27 @@ h1 {
  * ============================================================================
  * UNGROUPED TABS SECTION
  * ============================================================================
- * Tabs not in any Chrome tab group
  */
 
 .ungrouped-container {
-  margin-bottom: 12px;
+  margin-bottom: 6px;
 }
 
 .ungrouped-header {
   display: flex;
   align-items: center;
-  padding: 6px 12px;
-  margin-bottom: 4px;
-  border-radius: 4px;
+  padding: 5px 10px;
+  margin-bottom: 2px;
+  border-radius: 8px;
   font-weight: 600;
-  font-size: 13px;
-  color: #5F6368;  /* Grey (not clickable like group headers) */
-  background-color: #f1f3f4;  /* Light grey background */
+  font-size: 12px;
+  color: #5F6368;
+  background-color: #f1f3f4;
 }
 
 .ungrouped-header .tab-count {
   color: #5F6368;
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
 /*
@@ -749,37 +802,52 @@ h1 {
  */
 
 .closed-tabs-container {
-  margin-bottom: 12px;
+  margin-bottom: 6px;
 }
 
-.closed-tabs-header {
+/* Inline clickable header with Show/Hide toggle */
+.closed-section-header {
   display: flex;
   align-items: center;
-  padding: 6px 12px;
-  margin-bottom: 4px;
-  border-radius: 4px;
+  justify-content: space-between;
+  padding: 5px 10px;
+  margin-bottom: 2px;
+  margin-top: 4px;
+  border-radius: 8px;
   font-weight: 600;
-  font-size: 13px;
-  color: #80868b;  /* Muted grey */
+  font-size: 12px;
+  color: #80868b;
   background-color: #f8f9fa;
-  border-left: 3px solid #80868b;
+  border-left: 3px solid #9aa0a6;
+  cursor: pointer;
+  user-select: none;
 }
 
-.closed-tabs-header .tab-count {
-  color: #80868b;
-  opacity: 0.8;
-  margin-left: 4px;
+.closed-section-header:hover {
+  background-color: #f1f3f4;
+}
+
+.show-toggle {
+  font-size: 10px;
+  font-weight: 600;
+  color: #1A73E8;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  pointer-events: none;  /* Header click handles toggle */
 }
 
 /* Closed tab styling - grayed out appearance */
 .tab-item.closed-tab {
-  opacity: 0.7;
+  opacity: 0.6;
   background: #f8f9fa;
-  border-left-color: #dadce0;  /* Grey border */
+  border-left-color: #dadce0;
 }
 
 .tab-item.closed-tab:hover {
-  opacity: 0.9;
+  opacity: 0.85;
   background: #e8eaed;
   cursor: pointer;
 }
@@ -810,11 +878,11 @@ h1 {
 /* Time closed badge */
 .closed-time-badge {
   flex-shrink: 0;
-  padding: 2px 6px;
-  background: #dadce0;
-  color: #5f6368;
-  border-radius: 10px;
-  font-size: 10px;
+  padding: 1px 5px;
+  background: #e8eaed;
+  color: #80868b;
+  border-radius: 8px;
+  font-size: 9px;
   font-weight: 600;
   margin-left: 8px;
 }
@@ -835,7 +903,7 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.6;  /* Always visible */
+  opacity: 0.6;
   transition: opacity 0.15s, background 0.1s;
 }
 
@@ -844,120 +912,25 @@ h1 {
   background: rgba(0, 0, 0, 0.1);
 }
 
-/* Toggle button for closed tabs */
-.closed-tabs-toggle {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: #f8f9fa;
-  color: #5f6368;
-}
-
-.closed-tabs-toggle:hover {
-  background: #e8eaed;
-}
-
-.closed-tabs-toggle.active {
-  background: #80868b;
-  color: white;
-  border-color: #80868b;
-}
-
-/*
- * ============================================================================
- * FILTER CHIPS
- * ============================================================================
- * Row of small toggle pills above the search box for quick filtering.
- * Always visible (not inside the collapsible controls section).
- */
-
-.filter-chips-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.filter-chips {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  flex: 1;
-}
-
-.combine-filters-label {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 11px;
-  color: #80868b;
-  cursor: pointer;
-  white-space: nowrap;
-  user-select: none;
-}
-
-.combine-filters-checkbox {
-  margin: 0;
-  cursor: pointer;
-}
-
-.combine-filters-label:hover {
-  color: #5f6368;
-}
-
-.filter-chip {
-  padding: 4px 10px;
-  border: 1px solid #dadce0;
-  border-radius: 16px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  background: #fff;
-  color: #5f6368;
-  transition: all 0.2s;
-}
-
-.filter-chip:hover {
-  background: #f1f3f4;
-  border-color: #ccc;
-}
-
-.filter-chip.active {
-  background: #1A73E8;
-  color: white;
-  border-color: #1A73E8;
-}
-
-.filter-chip.active:hover {
-  background: #1765CC;
-  border-color: #1765CC;
-}
-
 /*
  * ============================================================================
  * FAVORITE SITES
  * ============================================================================
- * Grayed-out section showing favorite URLs not currently open.
- * Appears after recently closed tabs (always last).
  */
 
 .favorite-sites-container {
-  margin-bottom: 12px;
+  margin-bottom: 6px;
 }
 
 .favorite-sites-header {
   display: flex;
   align-items: center;
-  padding: 6px 12px;
-  margin-bottom: 4px;
-  border-radius: 4px;
+  padding: 5px 10px;
+  margin-bottom: 2px;
+  margin-top: 4px;
+  border-radius: 8px;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 12px;
   color: #B8860B;
   background-color: #fffbf0;
   border-left: 3px solid #FFC107;
@@ -965,21 +938,35 @@ h1 {
 
 .favorite-sites-header .tab-count {
   color: #B8860B;
-  opacity: 0.8;
+  opacity: 0.7;
   margin-left: 4px;
 }
 
 /* Favorite site styling - grayed out with gold accent */
 .tab-item.favorite-site {
-  opacity: 0.7;
-  background: #fffbf0;
+  opacity: 0.6;
+  background: #fffcf5;
   border-left-color: #FFC107;
 }
 
 .tab-item.favorite-site:hover {
-  opacity: 0.9;
+  opacity: 0.85;
   background: #fff8e1;
   cursor: pointer;
+}
+
+/* "Open →" label on favorite sites (appears on hover) */
+.open-link {
+  font-size: 10px;
+  font-weight: 600;
+  color: #B8860B;
+  opacity: 0;
+  transition: opacity 0.1s;
+  white-space: nowrap;
+}
+
+.tab-item.favorite-site:hover .open-link {
+  opacity: 0.7;
 }
 
 /* Star button for adding/removing favorites on open tabs */
@@ -1022,18 +1009,39 @@ h1 {
 
 /*
  * ============================================================================
- * FOOTER
+ * AGE COLOR KEY (replaces footer)
  * ============================================================================
  */
 
-.footer {
-  text-align: center;
-  padding: 8px 0 4px 0;
-  font-size: 11px;
-  color: #999;
-  border-top: 1px solid #eee;
-  margin-top: 8px;
+.age-key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 6px 0 4px;
+  border-top: 1px solid #f0f0f0;
+  margin-top: 4px;
 }
+
+.age-dot {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: #aaa;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot.green { background: #34A853; }
+.dot.yellow { background: #FBBC04; }
+.dot.orange { background: #E8710A; }
+.dot.red { background: #D93025; }
 
 /* ============================================================================
    HELP MODAL
@@ -1056,7 +1064,7 @@ h1 {
   background-color: #fff;
   margin: 50px auto;
   padding: 20px;
-  border-radius: 8px;
+  border-radius: 12px;
   width: 90%;
   max-width: 500px;
   max-height: 80vh;
@@ -1089,6 +1097,22 @@ h1 {
   margin-top: 20px;
   margin-bottom: 10px;
   color: #333;
+}
+
+/* Attribution line in help modal */
+.help-attribution {
+  font-size: 12px;
+  color: #888;
+  margin: -8px 0 12px 0;
+}
+
+.help-attribution a {
+  color: #1a73e8;
+  text-decoration: none;
+}
+
+.help-attribution a:hover {
+  text-decoration: underline;
 }
 
 /* Help table styling */
@@ -1124,7 +1148,7 @@ kbd {
 .help-note {
   background-color: #e8f0fe;
   padding: 10px;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 13px;
   margin-top: 10px;
 }
@@ -1152,14 +1176,4 @@ kbd {
 
 .shortcuts-link-btn:hover {
   color: #1557b0;
-}
-
-/* Info icon - clickable */
-.info-icon {
-  cursor: pointer;
-  user-select: none;
-}
-
-.info-icon:hover {
-  opacity: 0.7;
 }

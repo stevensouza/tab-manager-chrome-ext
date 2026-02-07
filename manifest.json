@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tab Manager",
-  "version": "2.5",
+  "version": "2.6",
   "description": "Manage tabs with search, filter chips, favorites, sorting, collapsible groups, view toggle, recently closed tabs with group restoration, keyboard navigation, pin/mute controls, duplicate detection, and age-based color coding. Created by Steve Souza using Claude Code (experimental). Repo: github.com/stevensouza/tab-manager-chrome-ext",
   "permissions": [
     "tabs",
