@@ -287,7 +287,6 @@ body {
   font-weight: 600;
   color: #9aa0a6;
   cursor: pointer;
-  text-transform: uppercase;
   letter-spacing: 0.3px;
   transition: all 0.15s;
 }
