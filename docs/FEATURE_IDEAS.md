@@ -1842,4 +1842,35 @@ Show: project "tab-manager" + tag "urgent"
 - **AI features?** Start with pattern-based, add LLM opt-in later
 - **Conservative vs. ambitious?** Recommended: Hybrid - quick wins first, expand based on usage
 
-**Last Updated:** 2026-01-24
+**Last Updated:** 2026-02-22
+
+---
+
+## Interesting Possible Enhancements (2026-02-22)
+
+*Quick-win ideas that stay within Tab Manager's current scope.*
+
+### Ungrouped Tabs Collapse
+Groups can be collapsed via accordion, but the "Ungrouped Tabs" section can't. Adding parity here would help users with many ungrouped tabs keep the UI tidy.
+
+**Effort:** LOW — reuse existing accordion/collapse logic from group headers.
+
+### Tab Search Across All Windows
+Currently shows tabs from the current window. A toggle to search across all browser windows would help multi-window users find lost tabs.
+
+**Effort:** LOW-MEDIUM — change `chrome.tabs.query({currentWindow: true})` to `chrome.tabs.query({})` when toggle is active. Need to add window indicator badges and handle cross-window tab activation with `chrome.windows.update()`.
+
+### Explicit Age Badges
+Currently age is only shown as a colored left border. Adding a small text badge like "3d" or "2w" would make staleness more scannable without hovering or referencing the color key.
+
+**Effort:** LOW — age calculation already exists for border colors, just render it as text too.
+
+### Drag-and-Drop Reorder / Group Assignment
+Let users drag tabs between groups or reorder within a group directly from the popup. Chrome's `chrome.tabs.move()` and `chrome.tabs.group()` APIs support this.
+
+**Effort:** MEDIUM-HIGH — drag-and-drop UI is non-trivial (ghost elements, drop targets, visual feedback). Could use HTML5 drag-and-drop API or a lightweight library.
+
+### Quick-Group from Search
+After searching (e.g., "react docs"), offer a button: "Group these N tabs" to instantly create a named group from search results. Uses `chrome.tabs.group()` and `chrome.tabGroups.update()`.
+
+**Effort:** MEDIUM — need UI for group name input and color picker, plus the grouping logic. The search/filter infrastructure already identifies the matching tabs.
