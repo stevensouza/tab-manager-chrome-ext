@@ -400,6 +400,15 @@ chrome.commands.onCommand.addListener(async (command) => {
     case 'goto-slot-2':
       await handleGotoSlot(2, currentWindow.id);
       break;
+    case 'goto-slot-3':
+      await handleGotoSlot(3, currentWindow.id);
+      break;
+    case 'goto-slot-4':
+      await handleGotoSlot(4, currentWindow.id);
+      break;
+    case 'goto-slot-5':
+      await handleGotoSlot(5, currentWindow.id);
+      break;
     default:
       console.log('[Tab Manager] Unknown command:', command);
   }

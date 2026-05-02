@@ -108,10 +108,12 @@ audioFilterActive = false // Audio chip state - PERSISTED to localStorage
 pinnedFilterActive = false // Pinned chip state - PERSISTED to localStorage
 favoritesFilterActive = false // Favorites chip state - PERSISTED to localStorage
 oldTabsFilterActive = false // Stale (1w+) chip state - PERSISTED to localStorage
+picksFilterActive = false // v2.8: Picks chip — show only tabs saved to a Quick Pick slot - PERSISTED to localStorage
 combineFiltersMode = false // AND mode for chips (default: single-select) - PERSISTED to localStorage
-pinnedSlots = {}          // v2.7: numbered keyboard-shortcut bookmarks - PERSISTED to chrome.storage.sync
-                          // Shape: { "1": {url, title, favIconUrl, pinnedAt} | undefined, "2": ... }
-                          // Triggered by goto-slot-N commands in background.js
+pinnedSlots = {}          // v2.7: Quick Pick slots (formerly "Pinned Slots") — keyboard-shortcut bookmarks - PERSISTED to chrome.storage.sync
+                          // Shape: { "1": {url, title, favIconUrl, pinnedAt} | undefined, ..., "5": ... }
+                          // Storage key stays "pinnedSlots" for backward compat; user-facing name is "Quick Pick" (v2.8+)
+                          // Triggered by goto-slot-N commands (N=1..5) in background.js
 ```
 
 ### Filter Logic - Critical Implementation Detail
@@ -243,10 +245,11 @@ Orange background (#E8710A), white text, shows count like "2×" or "3×"
 
 ### Adding New Filter Type
 
-1. Add state variable (e.g., `let pinnedFilterActive = false`)
+1. Add state variable (e.g., `let picksFilterActive = false`)
 2. Update `tabMatchesFilters()` to check new condition
-3. Add UI control in popup.html
-4. Wire up event listener in DOMContentLoaded
+3. Add `<button class="filter-chip" data-filter="<name>">…</button>` to the chip row in popup.html
+4. Wire `<name>` into all of: `anyChipFilterActive()`, `saveChipState()`, `restoreChipState()`'s `filterMap`, the `chipFilterMap` getter object, the `setChipFilter` switch, and the single-select / All-mode reset blocks (search popup.js for the existing chips like `oldTabsFilterActive` to find every site)
+5. Reset the flag in `clearFilters()`
 
 ### Changing Permissions
 
@@ -304,6 +307,17 @@ Detailed specs are in separate files — read these when modifying a specific fe
 - docs/FEATURE_SEARCH_AND_VIEW.md - Search Clear, Accordion Groups, View Toggle (v2.5)
 
 ## Version History
+
+- **v2.8** - Quick Pick (rename + 5 slots + picker color refresh + Picks chip)
+  - Renamed "Pinned Slots" → "Quick Pick" and switched the user-facing emoji from 📌 → 🔖 to remove collision with Chrome's native tab pin (still surfaced via the `📌`/`📍` status badge and the "Pinned" filter chip — those keep their vocabulary)
+  - Slot count expanded 2 → 5. Slot 1 keeps default `Cmd+Shift+1`; slots 2–5 are user-assigned at `chrome://extensions/shortcuts` (manifest still hard-limits 4 default keystrokes)
+  - Picker color states: green border = empty/available, red border + light-red bg = taken by another tab, solid blue + ✓ = this tab. The current-slot button is wider and contains an explicit `×` clear control (body click is a no-op — clearing is intentional)
+  - Toast confirmation (`.tm-toast`, single instance, ~1.8s) on save and clear
+  - Quick Pick section is now always visible (no longer hidden when chip filters are active)
+  - New "Picks" filter chip — single-word label to match Dupes/Audio/Pinned/Faves/Stale; matches when `getSlotForUrl(tab.url)` is non-null. Persisted to localStorage chip state under key `picks`
+  - Per-tab 🔖 tooltip mentions the keystroke (slot 1 → "Cmd+Shift+1 jumps here"; slots 2–5 → "assign a key at chrome://extensions/shortcuts")
+  - Picker buttons have `aria-label`s ("Slot 3, empty", "Slot 1, currently saved as …", "Slot 2, this tab is saved here")
+  - Storage shape unchanged (`pinnedSlots["1".."5"]` in `chrome.storage.sync`); v2.7 entries continue to work — no migration
 
 - **v2.7** - Pinned Tab Slots (keyboard-shortcut bookmarks)
   - 2 numbered slots (1, 2) holding `{url, title, favIconUrl, pinnedAt}` in `chrome.storage.sync`
