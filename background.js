@@ -338,6 +338,34 @@ async function handleNavigateForward(windowId) {
 }
 
 /**
+ * GO-TO-SLOT COMMAND - Activate the tab pinned to slot N, or reopen by URL if closed.
+ *
+ * Slots are stored in chrome.storage.sync under the 'pinnedSlots' key as
+ * { "1": { url, title, pinnedAt }, "2": ... }. Empty slots are no-ops.
+ * If the tab is in a different window, the window is focused first.
+ */
+async function handleGotoSlot(slotNumber, currentWindowId) {
+  const { pinnedSlots = {} } = await chrome.storage.sync.get('pinnedSlots');
+  const entry = pinnedSlots[String(slotNumber)];
+  if (!entry || !entry.url) {
+    console.log('[Tab Manager] Slot', slotNumber, 'is empty');
+    return;
+  }
+
+  const matches = await chrome.tabs.query({ url: entry.url });
+  if (matches.length > 0) {
+    matches.sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0));
+    const target = matches[0];
+    if (target.windowId !== currentWindowId) {
+      await chrome.windows.update(target.windowId, { focused: true });
+    }
+    await chrome.tabs.update(target.id, { active: true });
+  } else {
+    await chrome.tabs.create({ url: entry.url, active: true });
+  }
+}
+
+/**
  * Command listener - Routes keyboard shortcuts to handlers.
  */
 chrome.commands.onCommand.addListener(async (command) => {
@@ -365,6 +393,12 @@ chrome.commands.onCommand.addListener(async (command) => {
     case 'navigate-tab-forward':
       console.log('[Tab Manager] Calling handleNavigateForward');
       await handleNavigateForward(currentWindow.id);
+      break;
+    case 'goto-slot-1':
+      await handleGotoSlot(1, currentWindow.id);
+      break;
+    case 'goto-slot-2':
+      await handleGotoSlot(2, currentWindow.id);
       break;
     default:
       console.log('[Tab Manager] Unknown command:', command);

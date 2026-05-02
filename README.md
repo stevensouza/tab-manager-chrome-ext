@@ -12,6 +12,7 @@ This Chrome extension helps you manage browser tabs with features like search, f
 ## Table of Contents
 
 - [Features](#features)
+- [Browser Compatibility](#browser-compatibility)
 - [UI Preview](#ui-preview)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -24,9 +25,27 @@ This Chrome extension helps you manage browser tabs with features like search, f
 - [License](#license)
 - [Support](#support)
 
+## Browser Compatibility
+
+**Tested and confirmed working:**
+- **Google Chrome** (primary target — Manifest V3)
+- **Brave** — Chromium-based; load via `brave://extensions/`, customize keystrokes at `brave://extensions/shortcuts`
+
+**Should work but unverified.** All are Chromium-based and use the same `chrome.*` extension APIs this extension relies on (`tabs`, `tabGroups`, `sessions`, `storage`, `history`, `commands`):
+- Microsoft Edge (load via `edge://extensions/`)
+- Vivaldi
+- Opera
+- Arc
+
+**Not supported:**
+- **Firefox** — uses a different extension engine. While Firefox supports Manifest V3 in general, this extension relies on `chrome.tabGroups` and `chrome.sessions`, which have limited or no parity in Firefox. A Firefox port would require code changes.
+- **Safari** — Apple's Safari Web Extensions model is different; this extension would need to be ported.
+
+If you successfully run this in any of the unverified Chromium browsers, an issue or PR confirming would be welcome.
+
 ## Features
 
-### ⌨️ Keyboard Shortcuts (v2.3)
+### ⌨️ Keyboard Shortcuts (v2.3, expanded v2.7)
 
 **Toggle between current and previous tab:**
 - Windows/Linux: `Ctrl+Shift+Up`
@@ -40,7 +59,20 @@ This Chrome extension helps you manage browser tabs with features like search, f
 - Windows/Linux: `Ctrl+Shift+Right`
 - Mac: `⌘⇧→` (Cmd+Shift+Right)
 
+**Go to pinned slot 1** (v2.7) — jumps to the tab pinned to slot 1, or reopens it by URL if closed:
+- Windows/Linux: `Ctrl+Shift+1`
+- Mac: `⌘⇧1` (Cmd+Shift+1)
+
+**Go to pinned slot 2** (v2.7) — same behavior, slot 2. **Unbound by default** because Chrome only allows 4 default keystrokes per extension and the budget is full. Assign a key once at `chrome://extensions/shortcuts` and it works permanently.
+
 **Customizable** - Change shortcuts at `chrome://extensions/shortcuts`
+
+### 📌 Pinned Tab Slots (v2.7)
+- **2 numbered slots** holding a URL each. Pin via the 📌 button on any tab row, pick slot 1 or 2.
+- **Keystroke jumps to the slot.** If the tab is open, it activates (and focuses the right window). If the tab is closed, it reopens at the saved URL.
+- **Fully dynamic.** Pin CNN to slot 1 today, overwrite with GitHub tomorrow — no config files. Silent overwrite.
+- **Cross-device sync** via `chrome.storage.sync`.
+- **Why only 2 slots?** Chrome reserves `Cmd+1`–`Cmd+9` for built-in tab switching, and manifests can only ship 4 default keystrokes per extension (3 are used by the navigation shortcuts above). Slot 1 ships with a working default; slot 2 needs a one-time keystroke binding at `chrome://extensions/shortcuts`. More slots would all require manual binding — start with 2.
 
 ### ⭐ Favorite Sites (v2.4)
 - **Star any tab** - Hover to see ☆ button, click to save site as favorite
@@ -402,6 +434,14 @@ tab-manager-chrome-ext/
 - Can be removed at any time
 
 ## Changelog
+
+**Version 2.7 (2026-05-02)**
+- 📌 **NEW:** Pinned Tab Slots — 2 numbered slots (1, 2) that hold a URL. Press the slot's keystroke to jump to that tab, or reopen by URL if it was closed.
+- ⌨️ **NEW:** Keyboard shortcut `Cmd+Shift+1` (Mac) / `Ctrl+Shift+1` (Win/Linux) jumps to slot 1 by default.
+- ⌨️ **NEW:** Slot 2 is unbound by default (Chrome's 4-default-keystroke limit) — assign a key once at `chrome://extensions/shortcuts`.
+- 🎨 **NEW:** 📌 button on each tab row opens a 1/2 picker to pin to a slot. Silent overwrite when re-pinning.
+- 🎨 **NEW:** "Pinned Slots" section in the popup shows both slots; click a row to jump to its tab.
+- 🌐 **DOCS:** Added Browser Compatibility section — Chrome and Brave verified, other Chromium browsers (Edge, Vivaldi, Opera, Arc) likely work, Firefox and Safari not supported.
 
 **Version 2.6 (2026-02-06)**
 - 🎨 **REDESIGN:** Compact 1-row header (title left, "N groups · N tabs ℹ️" right)
