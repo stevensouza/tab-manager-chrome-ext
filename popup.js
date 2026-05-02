@@ -76,6 +76,12 @@ let oldTabsFilterActive = false;
 // When false (default), clicking a chip deselects others (single-select mode)
 let combineFiltersMode = false;
 
+// Pinned tab slots — keyboard shortcuts jump to / reopen these URLs
+// Stored in chrome.storage.sync as { "1": {url, title, pinnedAt} | null, "2": ... }
+// Slot 1 has a default keystroke (Cmd+Shift+1); slot 2 is user-assigned at chrome://extensions/shortcuts.
+const PINNED_SLOT_COUNT = 2;
+let pinnedSlots = {};
+
 /*
  * ============================================================================
  * GROUP COLLAPSE/EXPAND HELPERS
@@ -682,7 +688,8 @@ function renderTabs(searchTerm = '') {
       tabList.appendChild(tabElement);
     });
 
-    // Still render recently closed and favorites after the flat list
+    // Still render pinned slots, recently closed, and favorites after the flat list
+    renderPinnedSlots();
     renderRecentlyClosedTabs();
     renderFavoriteSites();
     return; // Exit early - don't use grouped rendering
@@ -797,6 +804,9 @@ function renderTabs(searchTerm = '') {
 
     tabList.appendChild(ungroupedContainer);
   }
+
+  // Render pinned slots (above recently closed)
+  renderPinnedSlots();
 
   // Render recently closed tabs
   renderRecentlyClosedTabs();
@@ -1134,6 +1144,20 @@ function createTabElement(tab, groupColor = null, groupTitle = null) {
   });
   tabItem.appendChild(favBtn);
 
+  // Slot-pin button — opens picker to pin this tab to slot 1 or 2
+  const currentSlot = getSlotForUrl(tab.url);
+  const slotBtn = document.createElement('button');
+  slotBtn.className = 'slot-pin-btn' + (currentSlot ? ' pinned-to-slot' : '');
+  slotBtn.textContent = currentSlot ? `📌${currentSlot}` : '📌';
+  slotBtn.title = currentSlot
+    ? `In slot ${currentSlot} — click to change`
+    : 'Pin to a numbered slot for keyboard shortcut access';
+  slotBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    showSlotPicker(tab, slotBtn);
+  });
+  tabItem.appendChild(slotBtn);
+
   // Close button (hidden by default, appears on hover)
   const closeBtn = document.createElement('button');
   closeBtn.className = 'close-btn';
@@ -1144,7 +1168,7 @@ function createTabElement(tab, groupColor = null, groupTitle = null) {
   // Click tab to activate it (but not when clicking action buttons)
   tabItem.addEventListener('click', (e) => {
     // Don't activate tab when clicking action buttons
-    if (e.target === closeBtn || e.target === pinnedBadge || e.target === audioBadge || e.target === favBtn) {
+    if (e.target === closeBtn || e.target === pinnedBadge || e.target === audioBadge || e.target === favBtn || e.target === slotBtn) {
       return;
     }
     activateTab(tab.id, tab.windowId);
@@ -1666,6 +1690,228 @@ async function openFavoriteSite(site, event) {
   await loadTabs();
 }
 
+/*
+ * ============================================================================
+ * PINNED TAB SLOTS
+ * ============================================================================
+ * Slots store a URL keyed by slot number. Keystrokes (handled in background.js)
+ * jump to the matching open tab or reopen by URL if closed.
+ */
+
+async function loadPinnedSlots() {
+  try {
+    const stored = await chrome.storage.sync.get('pinnedSlots');
+    pinnedSlots = stored.pinnedSlots || {};
+  } catch (error) {
+    console.warn('Failed to load pinned slots:', error);
+    pinnedSlots = {};
+  }
+}
+
+async function savePinnedSlots() {
+  try {
+    await chrome.storage.sync.set({ pinnedSlots });
+  } catch (error) {
+    console.warn('Failed to save pinned slots:', error);
+  }
+}
+
+/**
+ * Returns the slot number a tab URL is currently pinned to, or null if none.
+ */
+function getSlotForUrl(url) {
+  for (let n = 1; n <= PINNED_SLOT_COUNT; n++) {
+    if (pinnedSlots[String(n)]?.url === url) return n;
+  }
+  return null;
+}
+
+async function pinTabToSlot(tab, slotNumber) {
+  pinnedSlots[String(slotNumber)] = {
+    url: tab.url,
+    title: tab.title || tab.url,
+    favIconUrl: tab.favIconUrl || '',
+    pinnedAt: Date.now()
+  };
+  await savePinnedSlots();
+  renderTabs(currentSearchTerm);
+}
+
+async function clearSlot(slotNumber) {
+  delete pinnedSlots[String(slotNumber)];
+  await savePinnedSlots();
+  renderTabs(currentSearchTerm);
+}
+
+/**
+ * Activates the tab pinned to slot N (or reopens by URL if closed).
+ * Used when clicking a pinned-slot row in the popup — mirrors the keystroke handler.
+ */
+async function activatePinnedSlot(slotNumber) {
+  const entry = pinnedSlots[String(slotNumber)];
+  if (!entry) return;
+  const matches = await chrome.tabs.query({ url: entry.url });
+  if (matches.length > 0) {
+    matches.sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0));
+    const target = matches[0];
+    const currentWin = await chrome.windows.getCurrent();
+    if (target.windowId !== currentWin.id) {
+      await chrome.windows.update(target.windowId, { focused: true });
+    }
+    await chrome.tabs.update(target.id, { active: true });
+  } else {
+    await chrome.tabs.create({ url: entry.url, active: true });
+  }
+  window.close(); // close popup so user sees the tab
+}
+
+/**
+ * Renders the Pinned Slots section. Always visible (shows empty rows too)
+ * so the user can see which slots exist and which need keystroke binding.
+ */
+function renderPinnedSlots() {
+  // Hide when chip filters narrow the view — slots aren't part of the filtered set
+  if (anyChipFilterActive()) return;
+
+  const tabList = document.getElementById('tabList');
+
+  // Skip rendering if all slots are empty AND user has no expectation set
+  // (We always render — gives discoverability of the feature.)
+
+  const container = document.createElement('div');
+  container.className = 'pinned-slots-container';
+
+  const header = document.createElement('div');
+  header.className = 'pinned-slots-header';
+  const headerText = document.createElement('span');
+  headerText.textContent = '📌 Pinned Slots';
+  header.appendChild(headerText);
+
+  const hint = document.createElement('span');
+  hint.className = 'pinned-slots-hint';
+  hint.textContent = 'Cmd+Shift+1 jumps to slot 1';
+  header.appendChild(hint);
+
+  container.appendChild(header);
+
+  const groupTabsDiv = document.createElement('div');
+  groupTabsDiv.className = 'group-tabs';
+
+  for (let n = 1; n <= PINNED_SLOT_COUNT; n++) {
+    groupTabsDiv.appendChild(createPinnedSlotElement(n, pinnedSlots[String(n)]));
+  }
+
+  container.appendChild(groupTabsDiv);
+  tabList.appendChild(container);
+}
+
+function createPinnedSlotElement(slotNumber, entry) {
+  const row = document.createElement('div');
+  row.className = 'tab-item pinned-slot-row' + (entry ? '' : ' slot-empty');
+
+  const badge = document.createElement('span');
+  badge.className = 'slot-number-badge';
+  badge.textContent = String(slotNumber);
+  row.appendChild(badge);
+
+  if (entry) {
+    const favicon = document.createElement('img');
+    favicon.className = 'favicon';
+    favicon.src = entry.favIconUrl || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><text y="12" font-size="12">📌</text></svg>';
+    favicon.onerror = () => {
+      favicon.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><text y="12" font-size="12">📌</text></svg>';
+    };
+    row.appendChild(favicon);
+
+    const titleSpan = document.createElement('span');
+    titleSpan.className = 'tab-title';
+    titleSpan.textContent = entry.title;
+    row.appendChild(titleSpan);
+
+    row.title = `${entry.title}\n${entry.url}\n\nClick to open (or press shortcut)`;
+
+    const clearBtn = document.createElement('button');
+    clearBtn.className = 'close-btn';
+    clearBtn.textContent = '×';
+    clearBtn.title = `Clear slot ${slotNumber}`;
+    clearBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      clearSlot(slotNumber);
+    });
+    row.appendChild(clearBtn);
+
+    row.addEventListener('click', (e) => {
+      if (e.target === clearBtn) return;
+      activatePinnedSlot(slotNumber);
+    });
+  } else {
+    const titleSpan = document.createElement('span');
+    titleSpan.className = 'tab-title';
+    if (slotNumber === 1) {
+      titleSpan.textContent = 'Empty — pin a tab via 📌 button';
+    } else {
+      titleSpan.textContent = 'Empty — pin a tab, then assign a key at chrome://extensions/shortcuts';
+    }
+    row.appendChild(titleSpan);
+  }
+
+  return row;
+}
+
+/**
+ * Shows a small picker next to a tab's 📌 button so the user can pin to slot 1 or 2.
+ * Click outside to dismiss. Only one picker is open at a time.
+ */
+function showSlotPicker(tab, anchorBtn) {
+  // Remove any existing pickers
+  document.querySelectorAll('.slot-picker').forEach(el => el.remove());
+
+  const picker = document.createElement('div');
+  picker.className = 'slot-picker';
+
+  for (let n = 1; n <= PINNED_SLOT_COUNT; n++) {
+    const opt = document.createElement('button');
+    opt.className = 'slot-picker-option';
+    opt.textContent = String(n);
+    const currentlyPinnedHere = pinnedSlots[String(n)]?.url === tab.url;
+    if (currentlyPinnedHere) {
+      opt.classList.add('current');
+      opt.title = `This tab is in slot ${n} — click to unpin`;
+    } else if (pinnedSlots[String(n)]) {
+      opt.classList.add('occupied');
+      opt.title = `Slot ${n} → ${pinnedSlots[String(n)].title} (click to overwrite)`;
+    } else {
+      opt.title = `Pin this tab to slot ${n}`;
+    }
+    opt.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      picker.remove();
+      if (currentlyPinnedHere) {
+        await clearSlot(n);
+      } else {
+        await pinTabToSlot(tab, n);
+      }
+    });
+    picker.appendChild(opt);
+  }
+
+  // Position picker right next to the anchor button (relative parent assumed: tabItem)
+  const wrapper = anchorBtn.parentElement;
+  wrapper.style.position = 'relative';
+  wrapper.appendChild(picker);
+
+  // Outside click closes (deferred so the click that opened it doesn't immediately close it)
+  setTimeout(() => {
+    const handler = (e) => {
+      if (!picker.contains(e.target) && e.target !== anchorBtn) {
+        picker.remove();
+        document.removeEventListener('click', handler);
+      }
+    };
+    document.addEventListener('click', handler);
+  }, 0);
+}
+
 /**
  * Loads all tabs and groups from Chrome, updates UI.
  *
@@ -1715,6 +1961,9 @@ async function loadTabs() {
 
   // Load favorite sites
   await loadFavoriteSites();
+
+  // Load pinned tab slots
+  await loadPinnedSlots();
 
   // Update count displays
   document.getElementById('tabCount').textContent = allTabs.length;
@@ -1942,10 +2191,12 @@ document.addEventListener('DOMContentLoaded', () => {
     helpModal.style.display = 'block';
   });
 
-  // Open chrome://extensions/shortcuts via chrome.tabs.create (direct links blocked)
-  const openShortcutsBtn = document.getElementById('openShortcutsBtn');
-  openShortcutsBtn.addEventListener('click', () => {
-    chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
+  // Open chrome://extensions/shortcuts via chrome.tabs.create (direct links blocked).
+  // Wired by class so multiple instances in the help modal share one handler.
+  document.querySelectorAll('.shortcuts-link-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
+    });
   });
 
   // Close modal when X clicked

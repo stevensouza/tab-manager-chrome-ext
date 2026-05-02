@@ -109,6 +109,9 @@ pinnedFilterActive = false // Pinned chip state - PERSISTED to localStorage
 favoritesFilterActive = false // Favorites chip state - PERSISTED to localStorage
 oldTabsFilterActive = false // Stale (1w+) chip state - PERSISTED to localStorage
 combineFiltersMode = false // AND mode for chips (default: single-select) - PERSISTED to localStorage
+pinnedSlots = {}          // v2.7: numbered keyboard-shortcut bookmarks - PERSISTED to chrome.storage.sync
+                          // Shape: { "1": {url, title, favIconUrl, pinnedAt} | undefined, "2": ... }
+                          // Triggered by goto-slot-N commands in background.js
 ```
 
 ### Filter Logic - Critical Implementation Detail
@@ -301,6 +304,15 @@ Detailed specs are in separate files — read these when modifying a specific fe
 - docs/FEATURE_SEARCH_AND_VIEW.md - Search Clear, Accordion Groups, View Toggle (v2.5)
 
 ## Version History
+
+- **v2.7** - Pinned Tab Slots (keyboard-shortcut bookmarks)
+  - 2 numbered slots (1, 2) holding `{url, title, favIconUrl, pinnedAt}` in `chrome.storage.sync`
+  - Manifest commands: `goto-slot-1` (default `Cmd+Shift+1`) and `goto-slot-2` (no default — user assigns at chrome://extensions/shortcuts; manifest hard-limits 4 default keystrokes per extension and we already used 3 for the arrow shortcuts)
+  - Background handler `handleGotoSlot` queries `chrome.tabs.query({url})`; activates most-recently-accessed match (focusing its window if cross-window) or falls back to `chrome.tabs.create` to reopen closed tabs
+  - URL match is exact-string (matches favorites semantics)
+  - Per-tab `📌` button + popover picker on each tab row (silent overwrite)
+  - Pinned Slots section renders above Recently Closed; click a row to jump
+  - Section is hidden when chip filters are active (slots aren't part of the filtered set)
 
 - **v2.6** - UI Redesign (compact header, always-visible controls, visual polish)
   - Compact 1-row header (title left, "N groups · N tabs ℹ️" right)
