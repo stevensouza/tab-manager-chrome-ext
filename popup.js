@@ -76,11 +76,13 @@ let oldTabsFilterActive = false;
 // When false (default), clicking a chip deselects others (single-select mode)
 let combineFiltersMode = false;
 
-// Pinned tab slots — keyboard shortcuts jump to / reopen these URLs
-// Stored in chrome.storage.sync as { "1": {url, title, pinnedAt} | null, "2": ... }
-// Slot 1 has a default keystroke (Cmd+Shift+1); slot 2 is user-assigned at chrome://extensions/shortcuts.
-const PINNED_SLOT_COUNT = 2;
+// Quick Pick slots — keyboard shortcuts jump to / reopen these URLs
+// Stored in chrome.storage.sync as { "1": {url, title, pinnedAt} | null, "2": ..., up to "5" }
+// Slot 1 has a default keystroke (Cmd+Shift+1); slots 2–5 are user-assigned at chrome://extensions/shortcuts
+// (Chrome's manifest hard-limits 4 default keystrokes per extension and the other three are already used).
+const PINNED_SLOT_COUNT = 5;
 let pinnedSlots = {};
+let picksFilterActive = false;
 
 /*
  * ============================================================================
@@ -1144,14 +1146,18 @@ function createTabElement(tab, groupColor = null, groupTitle = null) {
   });
   tabItem.appendChild(favBtn);
 
-  // Slot-pin button — opens picker to pin this tab to slot 1 or 2
+  // Quick Pick button — opens picker to save this tab to a numbered slot
   const currentSlot = getSlotForUrl(tab.url);
   const slotBtn = document.createElement('button');
   slotBtn.className = 'slot-pin-btn' + (currentSlot ? ' pinned-to-slot' : '');
-  slotBtn.textContent = currentSlot ? `📌${currentSlot}` : '📌';
-  slotBtn.title = currentSlot
-    ? `In slot ${currentSlot} — click to change`
-    : 'Pin to a numbered slot for keyboard shortcut access';
+  slotBtn.textContent = currentSlot ? `🔖${currentSlot}` : '🔖';
+  if (currentSlot === 1) {
+    slotBtn.title = 'Saved in slot 1 — Cmd+Shift+1 jumps here. Click to change.';
+  } else if (currentSlot) {
+    slotBtn.title = `Saved in slot ${currentSlot} — assign a key at chrome://extensions/shortcuts. Click to change.`;
+  } else {
+    slotBtn.title = 'Save to a Quick Pick slot for keyboard shortcut access';
+  }
   slotBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     showSlotPicker(tab, slotBtn);
@@ -1299,6 +1305,7 @@ function clearFilters() {
   pinnedFilterActive = false;
   favoritesFilterActive = false;
   oldTabsFilterActive = false;
+  picksFilterActive = false;
 
   // Reset all chip UI
   document.querySelectorAll('.filter-chip').forEach(chip => {
@@ -1342,7 +1349,7 @@ function clearFilters() {
  */
 function anyChipFilterActive() {
   return duplicateFilterActive || audioFilterActive || pinnedFilterActive ||
-         favoritesFilterActive || oldTabsFilterActive;
+         favoritesFilterActive || oldTabsFilterActive || picksFilterActive;
 }
 
 /**
@@ -1355,6 +1362,7 @@ function saveChipState() {
     pinned: pinnedFilterActive,
     faves: favoritesFilterActive,
     old: oldTabsFilterActive,
+    picks: picksFilterActive,
     combine: combineFiltersMode
   };
   localStorage.setItem('tabManagerChipState', JSON.stringify(state));
@@ -1373,11 +1381,13 @@ function restoreChipState() {
     pinnedFilterActive = state.pinned || false;
     favoritesFilterActive = state.faves || false;
     oldTabsFilterActive = state.old || false;
+    picksFilterActive = state.picks || false;
     combineFiltersMode = state.combine || false;
 
     // Update chip UI
     const filterMap = { dupes: duplicateFilterActive, audio: audioFilterActive,
-      pinned: pinnedFilterActive, faves: favoritesFilterActive, old: oldTabsFilterActive };
+      pinned: pinnedFilterActive, faves: favoritesFilterActive, old: oldTabsFilterActive,
+      picks: picksFilterActive };
     document.querySelectorAll('.filter-chip').forEach(chip => {
       const filter = chip.dataset.filter;
       if (filterMap[filter]) chip.classList.add('active');
@@ -1430,6 +1440,11 @@ function tabMatchesFilters(tab) {
     if ((Date.now() - (tab.lastAccessed || 0)) <= oneWeek) {
       return false;
     }
+  }
+
+  // Picks filter (only show tabs saved to a Quick Pick slot)
+  if (picksFilterActive && !getSlotForUrl(tab.url)) {
+    return false;
   }
 
   return true;
@@ -1734,18 +1749,41 @@ async function pinTabToSlot(tab, slotNumber) {
     pinnedAt: Date.now()
   };
   await savePinnedSlots();
+  showToast(`Saved to Quick Pick slot ${slotNumber}`);
   renderTabs(currentSearchTerm);
 }
 
 async function clearSlot(slotNumber) {
   delete pinnedSlots[String(slotNumber)];
   await savePinnedSlots();
+  showToast(`Cleared slot ${slotNumber}`);
   renderTabs(currentSearchTerm);
 }
 
+let toastTimer = null;
 /**
- * Activates the tab pinned to slot N (or reopens by URL if closed).
- * Used when clicking a pinned-slot row in the popup — mirrors the keystroke handler.
+ * Shows a transient confirmation toast at the bottom of the popup.
+ * A second call replaces any in-flight toast.
+ */
+function showToast(message) {
+  let toast = document.getElementById('tmToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'tmToast';
+    toast.className = 'tm-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.add('visible');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.remove('visible');
+  }, 1800);
+}
+
+/**
+ * Activates the tab saved to Quick Pick slot N (or reopens by URL if closed).
+ * Used when clicking a slot row in the popup — mirrors the keystroke handler.
  */
 async function activatePinnedSlot(slotNumber) {
   const entry = pinnedSlots[String(slotNumber)];
@@ -1766,13 +1804,12 @@ async function activatePinnedSlot(slotNumber) {
 }
 
 /**
- * Renders the Pinned Slots section. Always visible (shows empty rows too)
+ * Renders the Quick Pick section. Always visible (shows empty rows too)
  * so the user can see which slots exist and which need keystroke binding.
  */
 function renderPinnedSlots() {
-  // Hide when chip filters narrow the view — slots aren't part of the filtered set
-  if (anyChipFilterActive()) return;
-
+  // Always render — Quick Pick is independent of chip filters and the section
+  // gives at-a-glance discoverability of the saved slots.
   const tabList = document.getElementById('tabList');
 
   // Skip rendering if all slots are empty AND user has no expectation set
@@ -1784,12 +1821,12 @@ function renderPinnedSlots() {
   const header = document.createElement('div');
   header.className = 'pinned-slots-header';
   const headerText = document.createElement('span');
-  headerText.textContent = '📌 Pinned Slots';
+  headerText.textContent = '🔖 Quick Pick';
   header.appendChild(headerText);
 
   const hint = document.createElement('span');
   hint.className = 'pinned-slots-hint';
-  hint.textContent = 'Cmd+Shift+1 jumps to slot 1';
+  hint.textContent = 'Cmd+Shift+1 jumps to slot 1 · slots 2–5 user-assigned at chrome://extensions/shortcuts';
   header.appendChild(hint);
 
   container.appendChild(header);
@@ -1817,9 +1854,9 @@ function createPinnedSlotElement(slotNumber, entry) {
   if (entry) {
     const favicon = document.createElement('img');
     favicon.className = 'favicon';
-    favicon.src = entry.favIconUrl || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><text y="12" font-size="12">📌</text></svg>';
+    favicon.src = entry.favIconUrl || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><text y="12" font-size="12">🔖</text></svg>';
     favicon.onerror = () => {
-      favicon.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><text y="12" font-size="12">📌</text></svg>';
+      favicon.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><text y="12" font-size="12">🔖</text></svg>';
     };
     row.appendChild(favicon);
 
@@ -1848,9 +1885,9 @@ function createPinnedSlotElement(slotNumber, entry) {
     const titleSpan = document.createElement('span');
     titleSpan.className = 'tab-title';
     if (slotNumber === 1) {
-      titleSpan.textContent = 'Empty — pin a tab via 📌 button';
+      titleSpan.textContent = 'Empty — save a tab via 🔖 button';
     } else {
-      titleSpan.textContent = 'Empty — pin a tab, then assign a key at chrome://extensions/shortcuts';
+      titleSpan.textContent = 'Empty — save a tab, then assign a key at chrome://extensions/shortcuts';
     }
     row.appendChild(titleSpan);
   }
@@ -1859,7 +1896,11 @@ function createPinnedSlotElement(slotNumber, entry) {
 }
 
 /**
- * Shows a small picker next to a tab's 📌 button so the user can pin to slot 1 or 2.
+ * Shows a small picker next to a tab's 🔖 button so the user can save to a numbered slot.
+ * States per slot:
+ *   - empty (green border)        → click saves this tab
+ *   - occupied by other (red bg)  → click overwrites
+ *   - this tab (solid blue + ✓)   → click on × clears the slot; body click is a no-op
  * Click outside to dismiss. Only one picker is open at a time.
  */
 function showSlotPicker(tab, anchorBtn) {
@@ -1870,28 +1911,56 @@ function showSlotPicker(tab, anchorBtn) {
   picker.className = 'slot-picker';
 
   for (let n = 1; n <= PINNED_SLOT_COUNT; n++) {
+    const slotEntry = pinnedSlots[String(n)];
+    const currentlyPinnedHere = slotEntry?.url === tab.url;
     const opt = document.createElement('button');
     opt.className = 'slot-picker-option';
-    opt.textContent = String(n);
-    const currentlyPinnedHere = pinnedSlots[String(n)]?.url === tab.url;
+
     if (currentlyPinnedHere) {
       opt.classList.add('current');
-      opt.title = `This tab is in slot ${n} — click to unpin`;
-    } else if (pinnedSlots[String(n)]) {
-      opt.classList.add('occupied');
-      opt.title = `Slot ${n} → ${pinnedSlots[String(n)].title} (click to overwrite)`;
-    } else {
-      opt.title = `Pin this tab to slot ${n}`;
-    }
-    opt.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      picker.remove();
-      if (currentlyPinnedHere) {
+      const numSpan = document.createElement('span');
+      numSpan.className = 'slot-num';
+      numSpan.textContent = String(n);
+      const checkSpan = document.createElement('span');
+      checkSpan.className = 'slot-check';
+      checkSpan.textContent = '✓';
+      const clearBtn = document.createElement('span');
+      clearBtn.className = 'slot-picker-clear';
+      clearBtn.textContent = '×';
+      clearBtn.title = `Clear slot ${n}`;
+      clearBtn.setAttribute('role', 'button');
+      clearBtn.setAttribute('aria-label', `Clear slot ${n}`);
+      clearBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        picker.remove();
         await clearSlot(n);
-      } else {
+      });
+      opt.append(numSpan, checkSpan, clearBtn);
+      opt.title = `Saved in slot ${n} — click × to clear`;
+      opt.setAttribute('aria-label', `Slot ${n}, this tab is saved here`);
+      // Body click on current slot is a no-op — clearing requires the explicit ×
+      opt.addEventListener('click', (e) => e.stopPropagation());
+    } else if (slotEntry) {
+      opt.classList.add('occupied');
+      opt.textContent = String(n);
+      opt.title = `Slot ${n} → ${slotEntry.title} (click to overwrite)`;
+      opt.setAttribute('aria-label', `Slot ${n}, currently saved as ${slotEntry.title}`);
+      opt.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        picker.remove();
         await pinTabToSlot(tab, n);
-      }
-    });
+      });
+    } else {
+      opt.textContent = String(n);
+      opt.title = `Save this tab to slot ${n}`;
+      opt.setAttribute('aria-label', `Slot ${n}, empty`);
+      opt.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        picker.remove();
+        await pinTabToSlot(tab, n);
+      });
+    }
+
     picker.appendChild(opt);
   }
 
@@ -2089,7 +2158,8 @@ document.addEventListener('DOMContentLoaded', () => {
     audio: () => audioFilterActive,
     pinned: () => pinnedFilterActive,
     faves: () => favoritesFilterActive,
-    old: () => oldTabsFilterActive
+    old: () => oldTabsFilterActive,
+    picks: () => picksFilterActive
   };
 
   const setChipFilter = (name, value) => {
@@ -2099,6 +2169,7 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'pinned': pinnedFilterActive = value; break;
       case 'faves': favoritesFilterActive = value; break;
       case 'old': oldTabsFilterActive = value; break;
+      case 'picks': picksFilterActive = value; break;
     }
   };
 
@@ -2118,6 +2189,7 @@ document.addEventListener('DOMContentLoaded', () => {
         pinnedFilterActive = false;
         favoritesFilterActive = false;
         oldTabsFilterActive = false;
+        picksFilterActive = false;
       }
 
       // Toggle the clicked chip
@@ -2150,6 +2222,7 @@ document.addEventListener('DOMContentLoaded', () => {
           pinnedFilterActive = false;
           favoritesFilterActive = false;
           oldTabsFilterActive = false;
+          picksFilterActive = false;
           // Re-activate just the first one
           setChipFilter(keepFilter, true);
           activeChips[0].classList.add('active');

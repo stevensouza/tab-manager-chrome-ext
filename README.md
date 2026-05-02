@@ -59,20 +59,22 @@ If you successfully run this in any of the unverified Chromium browsers, an issu
 - Windows/Linux: `Ctrl+Shift+Right`
 - Mac: `⌘⇧→` (Cmd+Shift+Right)
 
-**Go to pinned slot 1** (v2.7) — jumps to the tab pinned to slot 1, or reopens it by URL if closed:
+**Go to Quick Pick slot 1** (v2.7, renamed v2.8) — jumps to the tab saved to slot 1, or reopens it by URL if closed:
 - Windows/Linux: `Ctrl+Shift+1`
 - Mac: `⌘⇧1` (Cmd+Shift+1)
 
-**Go to pinned slot 2** (v2.7) — same behavior, slot 2. **Unbound by default** because Chrome only allows 4 default keystrokes per extension and the budget is full. Assign a key once at `chrome://extensions/shortcuts` and it works permanently.
+**Go to Quick Pick slots 2–5** (v2.8) — same behavior, slots 2–5. **Unbound by default** because Chrome only allows 4 default keystrokes per extension and the budget is full. Assign keys once at `chrome://extensions/shortcuts` and they work permanently.
 
 **Customizable** - Change shortcuts at `chrome://extensions/shortcuts`
 
-### 📌 Pinned Tab Slots (v2.7)
-- **2 numbered slots** holding a URL each. Pin via the 📌 button on any tab row, pick slot 1 or 2.
+### 🔖 Quick Pick (v2.7 as "Pinned Tab Slots", renamed + expanded in v2.8)
+- **5 numbered slots** holding a URL each. Save via the 🔖 button on any tab row, pick slot 1–5.
 - **Keystroke jumps to the slot.** If the tab is open, it activates (and focuses the right window). If the tab is closed, it reopens at the saved URL.
-- **Fully dynamic.** Pin CNN to slot 1 today, overwrite with GitHub tomorrow — no config files. Silent overwrite.
+- **Picker color states.** Empty slots show a green border, slots holding another tab show red, and the slot holding *this* tab is solid blue with a ✓ — clear it via the explicit ×.
+- **Picks chip.** A "Picks" filter chip in the top row narrows the open-tab list to just the tabs currently saved to a Quick Pick slot.
+- **Fully dynamic.** Save CNN to slot 1 today, overwrite with GitHub tomorrow — no config files. Silent overwrite, with a toast confirming the action.
 - **Cross-device sync** via `chrome.storage.sync`.
-- **Why only 2 slots?** Chrome reserves `Cmd+1`–`Cmd+9` for built-in tab switching, and manifests can only ship 4 default keystrokes per extension (3 are used by the navigation shortcuts above). Slot 1 ships with a working default; slot 2 needs a one-time keystroke binding at `chrome://extensions/shortcuts`. More slots would all require manual binding — start with 2.
+- **Why only slot 1 has a default keystroke?** Chrome reserves `Cmd+1`–`Cmd+9` for built-in tab switching, and manifests can only ship 4 default keystrokes per extension (3 are used by the navigation shortcuts above). Slot 1 ships with a working default; slots 2–5 need a one-time keystroke binding at `chrome://extensions/shortcuts`.
 
 ### ⭐ Favorite Sites (v2.4)
 - **Star any tab** - Hover to see ☆ button, click to save site as favorite
@@ -81,12 +83,12 @@ If you successfully run this in any of the unverified Chromium browsers, an issu
 - **Cross-device sync** - Favorites stored in `chrome.storage.sync`
 - **Smart visibility** - Favorites disappear from bottom section when the site is open
 
-### 🏷️ Filter Chips (v2.4, updated v2.6)
+### 🏷️ Filter Chips (v2.4, updated v2.6, v2.8)
 - **Always visible** - Row of pill buttons below search box
-- **5 filter types** - Dupes, Audio, Pinned, Faves, Stale
+- **6 filter types** - Dupes, Audio, Pinned, Faves, Stale, Picks (v2.8)
 - **Single-select default** - Clicking one chip deselects others
 - **[Any | All] mode toggle** - Segmented button to combine multiple filters with AND logic
-- **Clean results** - Recently closed and favorites sections hidden when filtering
+- **Clean results** - Recently closed and favorites sections hidden when filtering (Quick Pick section stays visible — it's independent of the chip filter)
 
 ### 📂 Collapsible Groups & View Toggle (v2.5)
 - **Accordion groups** - Click any group header to collapse/expand its tabs
@@ -165,7 +167,7 @@ If you successfully run this in any of the unverified Chromium browsers, an issu
 │                                                                │
 │ [🔍 Search tabs and groups...       ✕] [▼] [Groups | All]    │
 │                                                                │
-│ [Dupes] [Audio] [Pinned] [Faves] [Stale]         [Any | All]  │
+│ [Dupes] [Audio] [Pinned] [Faves] [Stale] [Picks]   [Any|All]  │
 │                                                                │
 │ [Sort: Groups A→Z + Recent ▼]  [Clear Filters] [Close Dupes]  │
 │ ─────────────────────────────────────────────────────────────  │
@@ -173,11 +175,11 @@ If you successfully run this in any of the unverified Chromium browsers, an issu
 │ ┌────────────────────────────────────────────────────────────┐ │
 │ │ ▼ 🔵 Work (5)                                          [×]│ │
 │ └────────────────────────────────────────────────────────────┘ │
-│ ┊  🌐📌🔈 GitHub - Pull Requests    [42]       [☆]  [×]     │
-│ ┊  📧 Gmail - Inbox           [2×] [89] 🔇     [★]  [×]     │
-│ ┊  📊 Google Sheets - Q1 Data      [156]       [☆]  [×]     │
-│ ┊  📧 Gmail - Inbox           [2×] [89]        [☆]  [×]     │
-│ ┊  📝 Notion - Projects                        [☆]  [×]     │
+│ ┊  🌐📌🔈 GitHub - Pull Requests   [42]    [☆] [🔖1] [×]    │
+│ ┊  📧 Gmail - Inbox          [2×] [89] 🔇  [★] [🔖]  [×]    │
+│ ┊  📊 Google Sheets - Q1 Data     [156]    [☆] [🔖]  [×]    │
+│ ┊  📧 Gmail - Inbox          [2×] [89]     [☆] [🔖]  [×]    │
+│ ┊  📝 Notion - Projects                    [☆] [🔖2] [×]    │
 │                                                                │
 │ ┌────────────────────────────────────────────────────────────┐ │
 │ │ ▶ 🟢 Research (4)                                      [×]│ │
@@ -185,9 +187,16 @@ If you successfully run this in any of the unverified Chromium browsers, an issu
 │    (collapsed — tabs hidden)                                   │
 │                                                                │
 │  Ungrouped Tabs (3)                                            │
-│ ┊  🎵🔊 YouTube - Music                       [☆]  [×]      │
-│ ┊  🛒 Amazon - Shopping Cart        [2×]       [☆]  [×]      │
-│ ┊  🛒 Amazon - Shopping Cart        [2×]       [☆]  [×]      │
+│ ┊  🎵🔊 YouTube - Music                    [☆] [🔖]  [×]    │
+│ ┊  🛒 Amazon - Shopping Cart       [2×]    [☆] [🔖]  [×]    │
+│ ┊  🛒 Amazon - Shopping Cart       [2×]    [☆] [🔖]  [×]    │
+│                                                                │
+│  🔖 Quick Pick     Cmd+Shift+1 jumps to slot 1 · 2–5 user…    │
+│ ┊  [1] 🌐 GitHub - Pull Requests                         [×] │
+│ ┊  [2] 📝 Notion - Projects                              [×] │
+│ ┊  [3] Empty — save a tab via 🔖 button                      │
+│ ┊  [4] Empty — save a tab, then assign a key…                │
+│ ┊  [5] Empty — save a tab, then assign a key…                │
 │                                                                │
 │  Recently Closed (3)                         [Show ▾]          │
 │ ┊  📰 CNN News Article        🔵Work      5m ago         [↶] │
@@ -208,30 +217,30 @@ If you successfully run this in any of the unverified Chromium browsers, an issu
 │                                                                │
 │ [🔍 Search tabs and groups...       ✕]        [Groups | All]  │
 │                                                    active ↗    │
-│ [Dupes] [Audio] [Pinned] [Faves] [Stale]         [Any | All]  │
+│ [Dupes] [Audio] [Pinned] [Faves] [Stale] [Picks]   [Any|All]  │
 │                                                                │
 │ [Sort: Title (A→Z) ▼]  [Clear Filters]                        │
 │ ─────────────────────────────────────────────────────────────  │
 │                                                                │
-│   🛒 Amazon - Shopping Cart  🔘         [2×]  [☆]  [×]       │
-│   🛒 Amazon - Shopping Cart  🔘         [2×]  [☆]  [×]       │
-│   📧 Gmail - Inbox           🔵Work     [2×]  [★]  [×]       │
-│   📧 Gmail - Inbox           🔵Work     [2×]  [☆]  [×]       │
-│   🌐 GitHub - Pull Requests  🔵Work            [☆]  [×]       │
-│   📊 Google Sheets - Q1 Data 🔵Work            [☆]  [×]       │
-│   📰 Medium - Web Dev        🟢Research        [☆]  [×]       │
-│   📝 Notion - Projects       🔵Work            [☆]  [×]       │
-│   🔍 Stack Overflow - Async  🟢Research [3×]  [☆]  [×]       │
-│   🔍 Stack Overflow - Async  🟢Research [3×]  [☆]  [×]       │
-│   📄 Wikipedia - React       🟢Research        [☆]  [×]       │
-│   🎵 YouTube - Music         🔘                [☆]  [×]       │
+│   🛒 Amazon - Shopping Cart  🔘     [2×]  [☆] [🔖]  [×]      │
+│   🛒 Amazon - Shopping Cart  🔘     [2×]  [☆] [🔖]  [×]      │
+│   📧 Gmail - Inbox           🔵Work [2×]  [★] [🔖]  [×]      │
+│   📧 Gmail - Inbox           🔵Work [2×]  [☆] [🔖]  [×]      │
+│   🌐 GitHub - Pull Requests  🔵Work       [☆] [🔖1] [×]      │
+│   📊 Google Sheets - Q1 Data 🔵Work       [☆] [🔖]  [×]      │
+│   📰 Medium - Web Dev        🟢Research   [☆] [🔖]  [×]      │
+│   📝 Notion - Projects       🔵Work       [☆] [🔖2] [×]      │
+│   🔍 Stack Overflow - Async  🟢Research [3×] [☆] [🔖] [×]    │
+│   🔍 Stack Overflow - Async  🟢Research [3×] [☆] [🔖] [×]    │
+│   📄 Wikipedia - React       🟢Research   [☆] [🔖]  [×]      │
+│   🎵 YouTube - Music         🔘           [☆] [🔖]  [×]      │
 │                                                                │
 │  ● <2h   ● <24h   ● <1w   ● >1w                               │
 └────────────────────────────────────────────────────────────────┘
 ```
 
 ### Legend
-- [Dupes] [Audio] etc. - Filter chips (click to filter, always visible)
+- [Dupes] [Audio] [Pinned] [Faves] [Stale] [Picks] - Filter chips (click to filter, always visible). **Picks** (v2.8) shows only tabs saved to a Quick Pick slot.
 - [Any | All] - Mode toggle: single-select vs. AND combine for chips
 - [Groups | All] - View toggle: grouped with headers vs. flat sorted list
 - [▼] button - Collapse/expand all groups (hidden in All view)
@@ -247,6 +256,7 @@ If you successfully run this in any of the unverified Chromium browsers, an issu
 - [↶] - Restore button (always visible for closed tabs)
 - [☆] - Add to favorites (appears on hover)
 - [★] - Already favorited (click to remove)
+- [🔖] / [🔖1]…[🔖5] - Quick Pick button (v2.8): empty bookmark or saved-to-slot N. Click to open the picker.
 - [2×][3×] - Duplicate count badge (orange, current tabs only)
 - [42][156] - Visit count badge (blue, total visits from browser history)
 - 5m ago, 2h ago, 1d ago - Time since tab was closed (recently closed section)
@@ -435,8 +445,19 @@ tab-manager-chrome-ext/
 
 ## Changelog
 
+**Version 2.8 (2026-05-02)**
+- 🔖 **RENAME:** "Pinned Tab Slots" → **Quick Pick**. Switched the user-facing emoji from 📌 → 🔖 to remove collision with Chrome's native tab pin (still surfaced via the `📌`/`📍` status badge and the "Pinned" filter chip — those keep their vocabulary).
+- 🔢 **NEW:** Slot count expanded **2 → 5**. Slot 1 keeps default `Cmd+Shift+1`; slots 2–5 are user-assigned at `chrome://extensions/shortcuts`.
+- 🎨 **NEW:** Picker colors are now semantic — green border = empty/available, red border = taken by another tab, solid blue + ✓ = this tab. The current-slot button has an explicit `×` to clear (body click is a no-op).
+- 🪧 **NEW:** Toast confirmation on save and clear (single instance, ~1.8 s).
+- 🔍 **NEW:** "Picks" filter chip — narrows the open-tab list to tabs saved to a Quick Pick slot. Persisted to localStorage with the other chip states.
+- 👁️ **CHANGE:** Quick Pick section is now always visible (no longer hidden when chip filters are active).
+- ♿ **A11y:** Picker buttons have descriptive `aria-label`s ("Slot 3, empty" / "Slot 1, currently saved as …" / "Slot 2, this tab is saved here").
+- 💡 Per-tab 🔖 tooltip mentions the keystroke for slot 1 and points to `chrome://extensions/shortcuts` for slots 2–5.
+- 🔄 Storage shape unchanged (`pinnedSlots["1".."5"]` in `chrome.storage.sync`); v2.7 entries continue to work — no migration needed.
+
 **Version 2.7 (2026-05-02)**
-- 📌 **NEW:** Pinned Tab Slots — 2 numbered slots (1, 2) that hold a URL. Press the slot's keystroke to jump to that tab, or reopen by URL if it was closed.
+- 📌 **NEW:** Pinned Tab Slots — 2 numbered slots (1, 2) that hold a URL. Press the slot's keystroke to jump to that tab, or reopen by URL if it was closed. (Renamed to "Quick Pick" in v2.8.)
 - ⌨️ **NEW:** Keyboard shortcut `Cmd+Shift+1` (Mac) / `Ctrl+Shift+1` (Win/Linux) jumps to slot 1 by default.
 - ⌨️ **NEW:** Slot 2 is unbound by default (Chrome's 4-default-keystroke limit) — assign a key once at `chrome://extensions/shortcuts`.
 - 🎨 **NEW:** 📌 button on each tab row opens a 1/2 picker to pin to a slot. Silent overwrite when re-pinning.

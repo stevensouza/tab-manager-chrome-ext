@@ -41,6 +41,7 @@
         <button class="filter-chip" data-filter="pinned" title="Show only pinned tabs">Pinned</button>
         <button class="filter-chip" data-filter="faves" title="Show only favorited sites">Faves</button>
         <button class="filter-chip" data-filter="old" title="Show tabs not accessed in over a week (1w+)">Stale</button>
+        <button class="filter-chip" data-filter="picks" title="Show only tabs saved to a Quick Pick slot">Picks</button>
       </div>
       <div class="mode-toggle">
         <button class="mode-btn active" data-mode="any" title="Single-select: clicking one chip deselects others">Any</button>
@@ -105,15 +106,15 @@
           </tr>
           <tr>
             <td><kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>1</kbd> (Mac)<br><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>1</kbd> (Win)</td>
-            <td>Go to pinned slot 1 (reopens by URL if closed). Pin via 📌 button on any tab.</td>
+            <td>Go to Quick Pick slot 1 (reopens by URL if closed). Save via 🔖 button on any tab.</td>
           </tr>
           <tr>
             <td><em>unassigned</em></td>
-            <td>Go to pinned slot 2 — assign a key at <button id="openShortcutsBtn2" class="shortcuts-link-btn">chrome://extensions/shortcuts</button> (Chrome only allows 4 default shortcuts per extension; we used our budget on slot 1).</td>
+            <td>Go to Quick Pick slots 2–5 — assign keys at <button id="openShortcutsBtn2" class="shortcuts-link-btn">chrome://extensions/shortcuts</button> (Chrome allows only 4 default shortcuts per extension; we used our budget on slot 1).</td>
           </tr>
         </table>
         <p class="help-note">💡 Customize shortcuts at <button id="openShortcutsBtn" class="shortcuts-link-btn">chrome://extensions/shortcuts</button></p>
-        <p class="help-note">📌 <strong>Pinned slots</strong> hold a URL, not a tab. Assign with the 📌 button next to any tab; the keystroke jumps there (or reopens the URL if the tab was closed). Slots sync across devices.</p>
+        <p class="help-note">🔖 <strong>Quick Pick</strong> slots hold a URL, not a tab. Save via the 🔖 button next to any tab; the keystroke jumps there (or reopens the URL if the tab was closed). Slots sync across devices.</p>
 
         <h3>🔎 Search & View Controls</h3>
         <table class="help-table">

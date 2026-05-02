@@ -19,12 +19,15 @@ Filter chip states, AND mode, search text, view mode, and group collapse states 
 {
   dupes: boolean,      // Duplicates chip
   audio: boolean,      // Audio chip
-  pinned: boolean,     // Pinned chip
+  pinned: boolean,     // Pinned chip (Chrome native pin)
   faves: boolean,      // Favorites chip
   old: boolean,        // Stale (1w+) chip
-  combine: boolean     // AND mode toggle
+  picks: boolean,      // Quick Pick chip (v2.8) — tabs saved to a slot
+  combine: boolean     // AND mode toggle (segmented [Any | All] in v2.6+)
 }
 ```
+
+**Note:** Quick Pick slot data itself lives in `chrome.storage.sync` under key `pinnedSlots` (cross-device sync) — NOT in localStorage. Only the `picks` chip's on/off state is in localStorage.
 
 ### Key Functions
 
@@ -36,7 +39,7 @@ Filter chip states, AND mode, search text, view mode, and group collapse states 
 
 **Save triggers:**
 - Clicking any filter chip
-- Toggling AND mode checkbox
+- Toggling the `[Any | All]` mode segmented control
 - Clearing filters (saves empty state)
 - Typing in search box (debounced via input event)
 
@@ -44,7 +47,7 @@ Filter chip states, AND mode, search text, view mode, and group collapse states 
 - On popup open, reads from localStorage
 - Updates global state variables
 - Applies 'active' class to chips
-- Sets checkbox states
+- Sets `[Any | All]` mode-button active state
 - Populates search box
 - Silently ignores corrupt data
 

@@ -1075,7 +1075,7 @@ body {
   background: #c0c4c9;
 }
 
-/* Per-tab slot-pin button (📌 with optional slot number) */
+/* Per-tab Quick Pick button (🔖 with optional slot number) */
 .slot-pin-btn {
   flex-shrink: 0;
   height: 20px;
@@ -1128,10 +1128,12 @@ body {
 }
 
 .slot-picker-option {
+  /* Default state = empty / available */
   width: 28px;
   height: 28px;
-  border: 1px solid #dadce0;
+  border: 1.5px solid #34a853;          /* Material green 600 */
   background: white;
+  color: #202124;
   border-radius: 4px;
   font-size: 13px;
   font-weight: 600;
@@ -1139,23 +1141,69 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.1s;
+  padding: 0;
+  transition: background-color 0.1s, border-color 0.1s;
 }
 
 .slot-picker-option:hover {
-  background: #e8f0fe;
-  border-color: #1A73E8;
-}
-
-.slot-picker-option.current {
-  background: #1A73E8;
-  color: white;
-  border-color: #1A73E8;
+  background: #e6f4ea;
+  border-color: #1e8e3e;
 }
 
 .slot-picker-option.occupied {
-  background: #fff4e5;
-  border-color: #f4b400;
+  /* Slot is taken by ANOTHER tab — click overwrites */
+  border-color: #ea4335;
+  background: #fce8e6;
+  color: #202124;
+}
+
+.slot-picker-option.occupied:hover {
+  background: #f9d6d2;
+  border-color: #c5221f;
+}
+
+.slot-picker-option.current {
+  /* THIS tab is saved here — wider to fit number + ✓ + × */
+  background: #1A73E8;
+  color: white;
+  border-color: #1A73E8;
+  width: 50px;
+  gap: 2px;
+  cursor: default;
+}
+
+.slot-picker-option.current:hover {
+  background: #1A73E8;
+  border-color: #1A73E8;
+}
+
+.slot-picker-option.current .slot-num {
+  font-weight: 700;
+}
+
+.slot-picker-option.current .slot-check {
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+.slot-picker-clear {
+  margin-left: 2px;
+  width: 16px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.18);
+  color: white;
+  border-radius: 3px;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.1s;
+}
+
+.slot-picker-clear:hover {
+  background: rgba(255, 255, 255, 0.35);
 }
 
 /*
@@ -1327,4 +1375,32 @@ kbd {
 
 .shortcuts-link-btn:hover {
   color: #1557b0;
+}
+
+/* Toast confirmation (Quick Pick save / clear) */
+.tm-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%) translateY(8px);
+  background: #202124;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 1000;
+  white-space: nowrap;
+  max-width: calc(100% - 32px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tm-toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }

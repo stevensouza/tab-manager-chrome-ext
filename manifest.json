@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tab Manager",
-  "version": "2.7",
+  "version": "2.8",
   "description": "Manage tabs with search, filter chips, favorites, sorting, collapsible groups, view toggle, recently closed tabs with group restoration, keyboard navigation, pin/mute controls, duplicate detection, and age-based color coding. Created by Steve Souza using Claude Code (experimental). Repo: github.com/stevensouza/tab-manager-chrome-ext",
   "permissions": [
     "tabs",
@@ -37,10 +37,19 @@
         "default": "Ctrl+Shift+1",
         "mac": "Command+Shift+1"
       },
-      "description": "Go to pinned slot 1 (reopens by URL if closed)"
+      "description": "Go to Quick Pick slot 1 (reopens by URL if closed)"
     },
     "goto-slot-2": {
-      "description": "Go to pinned slot 2 (reopens by URL if closed) — assign a key at chrome://extensions/shortcuts"
+      "description": "Go to Quick Pick slot 2 — assign a key at chrome://extensions/shortcuts"
+    },
+    "goto-slot-3": {
+      "description": "Go to Quick Pick slot 3 — assign a key at chrome://extensions/shortcuts"
+    },
+    "goto-slot-4": {
+      "description": "Go to Quick Pick slot 4 — assign a key at chrome://extensions/shortcuts"
+    },
+    "goto-slot-5": {
+      "description": "Go to Quick Pick slot 5 — assign a key at chrome://extensions/shortcuts"
     }
   },
   "icons": {

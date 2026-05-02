@@ -91,28 +91,39 @@ NOT:
 
 ---
 
-## Pinned Tab Slots (v2.7)
+## Quick Pick (v2.7 as "Pinned Tab Slots", renamed v2.8)
 
 ### Overview
 
-Numbered "slots" — keyboard-triggered bookmarks that hold a URL. Press the slot's keystroke to jump to that tab; if the tab was closed, the URL is reopened in a new tab. Slot 1 has a default keystroke; slot 2 needs a one-time user binding.
+Numbered "slots" — keyboard-triggered bookmarks that hold a URL. Press the slot's keystroke to jump to that tab; if the tab was closed, the URL is reopened in a new tab. Slot 1 has a default keystroke; slots 2–5 need a one-time user binding.
+
+### What changed in v2.8
+
+- Renamed user-facing label "Pinned Slots" → **Quick Pick**; UI emoji 📌 → 🔖. Internal identifiers (`pinnedSlots` storage key, `PINNED_SLOT_COUNT`, `.slot-pin-btn`, `.pinned-to-slot`) unchanged for backward compat.
+- Slot count expanded **2 → 5**. New manifest commands `goto-slot-3`/`-4`/`-5` (no `suggested_key` — same 4-default-keystroke constraint).
+- Picker color states: green border = empty, red border = taken by another tab, solid blue + ✓ = this tab. Current-slot button is wider and contains an explicit `×` clear control; body click is a no-op.
+- New `picksFilterActive` flag + "Picks" filter chip (matches `getSlotForUrl(tab.url)` non-null). Persisted with the other chip states under key `picks` in localStorage `tabManagerChipState`.
+- Quick Pick section now renders even when chip filters are active (the section is independent of the open-tab filter set).
+- Toast confirmation (`.tm-toast`) on save and clear.
+- Per-tab 🔖 tooltip mentions the keystroke for slot 1; points to `chrome://extensions/shortcuts` for slots 2–5.
+- Picker buttons have descriptive `aria-label`s.
 
 ### Two Distinct Bindings
 
 The feature has two separate concepts that look similar but aren't:
 
-1. **Slot → URL binding.** Stored at runtime in `chrome.storage.sync` (key: `pinnedSlots`). Shape: `{ "1": {url, title, favIconUrl, pinnedAt}, "2": ... }`. Set/cleared via the popup UI. Fully dynamic — overwritten any time you click 📌 on a different tab.
+1. **Slot → URL binding.** Stored at runtime in `chrome.storage.sync` (key: `pinnedSlots` — internal name kept for backward compat with v2.7). Shape: `{ "1": {url, title, favIconUrl, pinnedAt}, "2": ..., up to "5" }`. Set/cleared via the popup UI. Fully dynamic — overwritten any time you click 🔖 on a different tab.
 
-2. **Slot → keystroke binding.** Statically declared in `manifest.json` under the `commands` key. The `chrome.commands` API has no runtime registration, so each slot needs its own predeclared command (`goto-slot-1`, `goto-slot-2`). Slot 1 ships with `Cmd+Shift+1` / `Ctrl+Shift+1`; slot 2 has no `suggested_key` and the user binds it once at `chrome://extensions/shortcuts`.
+2. **Slot → keystroke binding.** Statically declared in `manifest.json` under the `commands` key. The `chrome.commands` API has no runtime registration, so each slot needs its own predeclared command (`goto-slot-1` … `goto-slot-5`). Slot 1 ships with `Cmd+Shift+1` / `Ctrl+Shift+1`; slots 2–5 have no `suggested_key` and the user binds them at `chrome://extensions/shortcuts`.
 
-### Why 2 slots, not 9
+### Why 5 slots (and only 1 default key)
 
 Two Chrome rules constrain this:
 
 - **Reserved chords.** `Cmd+1` … `Cmd+9` (Mac) and `Ctrl+1` … `Ctrl+9` (Win/Linux) are reserved by Chrome for built-in tab-strip switching. Extension commands cannot bind to them; Chrome silently drops the registration. Workaround: any chord with an extra modifier (Shift/Alt) works — hence `Cmd+Shift+1`.
-- **4-default cap.** Chrome enforces a per-extension limit of 4 commands with a `suggested_key`. The extension already used 3 (toggle, back, forward). Only 1 default-keystroke "budget" was left, so only slot 1 ships with a working key out of the box. Slot 2 still works — it just appears as "Not set" in `chrome://extensions/shortcuts` until the user assigns a key.
+- **4-default cap.** Chrome enforces a per-extension limit of 4 commands with a `suggested_key`. The extension already used 3 (toggle, back, forward). Only 1 default-keystroke "budget" was left, so only slot 1 ships with a working key out of the box. Slots 2–5 still work — they appear as "Not set" in `chrome://extensions/shortcuts` until the user assigns a key.
 
-Adding more slots is a manifest-only change but every additional slot would require manual user binding.
+5 was picked as a balance between "enough one-keystroke bookmarks for the common workflows" and "too many empty rows pad the popup." Going higher is a manifest-only change but every additional slot would still require manual user binding.
 
 ### Command Handler
 
@@ -128,9 +139,10 @@ URL match is **exact-string**, matching favorites semantics. URL with hash or qu
 
 ### Popup UI
 
-- **Per-tab 📌 button** (next to favorite-star) opens a popover picker. Click 1 or 2 to pin (silent overwrite); click again on a slot the tab is already in to clear it.
-- **Pinned Slots section** renders before Recently Closed. Always shows both slot rows even if empty (discoverability). Empty slot 2 shows hint about chrome://extensions/shortcuts. Click a filled slot row to activate the tab (mirrors keystroke behavior).
-- **Section hidden** when any chip filter is active (slots are out-of-band from the filtered tab list).
+- **Per-tab 🔖 button** (next to favorite-star) opens a popover picker. Click an empty (green) slot to save; click an occupied (red) slot to overwrite. The current-slot button is solid blue with a ✓ and an explicit `×` to clear.
+- **Quick Pick section** renders before Recently Closed. Always shows all 5 slot rows even if empty (discoverability). Empty rows for slots 2–5 hint at chrome://extensions/shortcuts. Click a filled slot row to activate the tab (mirrors keystroke behavior).
+- **Always visible** — section renders even when chip filters are active (Quick Pick is independent of the filtered open-tab list). The companion "Picks" filter chip narrows the open-tab list to just the saved-to-a-slot tabs.
+- **Toast** confirms each save and clear (~1.8 s, single instance).
 
 ### Storage
 
@@ -138,8 +150,8 @@ URL match is **exact-string**, matching favorites semantics. URL with hash or qu
 
 ### Files Modified
 
-- **manifest.json**: bumped to v2.7, added `goto-slot-1` (with `suggested_key`) and `goto-slot-2` (no default) commands.
-- **background.js**: added `handleGotoSlot()` and routed `goto-slot-1` / `goto-slot-2` cases through the existing command listener.
-- **popup.js**: added `pinnedSlots` global state, `loadPinnedSlots`/`savePinnedSlots`/`pinTabToSlot`/`clearSlot`/`activatePinnedSlot`/`renderPinnedSlots`/`createPinnedSlotElement`/`showSlotPicker`. Hooked load into `loadTabs()` and render into `renderTabs()`. Added 📌 button to `createTabElement()`.
-- **popup.html**: added two rows to the help modal shortcuts table; rewired `chrome://extensions/shortcuts` button via class so multiple instances work.
-- **styles.css**: added `.pinned-slots-container`, `.pinned-slots-header`, `.pinned-slot-row`, `.slot-empty`, `.slot-number-badge`, `.slot-pin-btn`, `.slot-picker`, `.slot-picker-option` styles.
+- **manifest.json**: bumped to v2.8, ships `goto-slot-1` (with `suggested_key`) plus `goto-slot-2` … `goto-slot-5` (no defaults).
+- **background.js**: `handleGotoSlot()` routed for all 5 slots through the existing command listener.
+- **popup.js**: `pinnedSlots` global state plus `loadPinnedSlots`/`savePinnedSlots`/`pinTabToSlot`/`clearSlot`/`activatePinnedSlot`/`renderPinnedSlots`/`createPinnedSlotElement`/`showSlotPicker`/`showToast`. v2.8 adds `picksFilterActive` flag wired into `tabMatchesFilters`/`anyChipFilterActive`/save+restore chip state. Hooked load into `loadTabs()` and render into `renderTabs()`. Added 🔖 button to `createTabElement()`.
+- **popup.html**: rows in the help modal shortcuts table; rewired `chrome://extensions/shortcuts` button via class so multiple instances work. v2.8 adds the "Picks" chip.
+- **styles.css**: `.pinned-slots-container`, `.pinned-slots-header`, `.pinned-slot-row`, `.slot-empty`, `.slot-number-badge`, `.slot-pin-btn`, `.slot-picker`, `.slot-picker-option` (with `.current` / `.occupied` color states), `.slot-picker-clear`, and `.tm-toast` (v2.8).
